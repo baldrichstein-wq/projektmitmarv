@@ -10,3 +10,6 @@ Schulprojekt1 Rezeptbuch
 -Datenbank für Rezepte mit sqlite3
 -Datenbank für Benutzer
 -Html als GUI
+-Kommentar Sektion für Rezepte und bewertungsdurchschnitt anzeige sowie bewertungen
+-Suchfunktion für den zweck der suche bestimmter rezepte
+-funktion für das erstellen von rezepten anderer nutzer global sichtbar
