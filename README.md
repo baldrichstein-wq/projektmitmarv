@@ -1,6 +1,9 @@
 # projektmitmarv
 Schulprojekt1 Rezeptbuch
 
+Team
+Marvin, Marina, Stefan, David
+
 https://lucid.app/lucidspark/1a18f290-dd6b-4c0f-9356-3b6ff6197a18/edit?invitationId=inv_4cc7743a-9415-4b42-aaaf-2559e3713393 (Veranschaulichung des Progrogrammes was mit wem verbunden ist)
 
 -Benutzer anlegen und verwalten
