@@ -15,7 +15,7 @@ Marvin, Marina, Stefan, David
 
 -Essensrezept einfügen,ändern,löschen  Stefan  woche 1
 
--Weinrezepte einfügen,ändern,löschen   Marvin woche 1
+-Weinrezepte einfügen,ändern,löschen   Marvin verbessern woche 1
 
 -Weine für Essen vorschlagen           Marivn woche 2
 
