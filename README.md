@@ -25,7 +25,7 @@ Marvin, Marina, Stefan, David
 
 -Datenbank für Benutzer David Marina Woche 1
 
--Html als GUI Woche 2
+-Html als GUI Marvin Woche 2
 
 -Kommentar Sektion für Rezepte und bewertungsdurchschnitt anzeige sowie bewertungen  Woche 2
 
