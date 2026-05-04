@@ -6,14 +6,14 @@ Marvin, Marina, Stefan, David
 
 -Html als GUI
 
--Essensrezept einfügen,ändern,löschen
--Weinrezepte einfügen,ändern,löschen
+-Essensrezept einfügen,ändern,löschen  Stefan
+-Weinrezepte einfügen,ändern,löschen   Marvin
 -Weine für Essen vorschlagen
 -Rezepte berechnen für x Personen und X Liter
 -Datenbank für Rezepte mit sqlite3
 
 -Rechtevergabe
--Benutzer anlegen und verwalten
+-Benutzer anlegen und verwalten  David Marina
 -Datenbank für Benutzer
 
 -Kommentar Sektion für Rezepte und bewertungsdurchschnitt anzeige sowie bewertungen
