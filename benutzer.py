@@ -35,5 +35,4 @@ def benutzer_anlegen(name, email, passwort):
 # --- Programmstart ---
 init_db()
 
-# Testlauf:
-# benutzer_anlegen("Max Mustermann", "max@kochen.de", "superSicher123")
+
