@@ -8,16 +8,9 @@ Team
 
 Marvin, Marina, Stefan, David
 
+-maim.py Einbindung der wine.py,benutzer.py und essen.py David Woche 1 erstellen und testen des Programms Woche 2 konvertieren zur fastapi wenn das Programm läuft. 
 
-<<<<<<< HEAD
--Essensrezept einfügen,ändern,löschen
--Weinrezepte einfügen,ändern,löschen
--Weine für Essen vorschlagen
--Rezepte berechnen für x Personen und X Liter
--Datenbank für Rezepte mit sqlite3 essen.db wein.db
-=======
 -Benutzer anlegen und verwalten        David Marina Woche 1
->>>>>>> 41fa9a7fda9224bcc0729d59b5bebe753d3917a0
 
 -Rechtevergabe                         David Marina woche 1
 
