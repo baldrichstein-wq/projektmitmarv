@@ -1,10 +1,6 @@
 import sqlite3
 import json
-from typing import List
-from contextlib import asynccontextmanager
-
-from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
 
 DB_FILE = 'wines.db'
 
@@ -59,68 +55,48 @@ def init_db():
             ))
             conn.commit()
 
-# Dependency to get DB connection per request
+# Helper function to get DB connection
 def get_db():
     conn = sqlite3.connect(DB_FILE, check_same_thread=False)
-    try:
-        yield conn
-    finally:
-        conn.close()
+    return conn
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    init_db()
-    yield
+# --- Wine Database Functions ---
 
-app = FastAPI(lifespan=lifespan)
-
-# --- Pydantic Models ---
-class WineBase(BaseModel):
-    name: str
-    ingredients: List[str]
-    description: str
-    brewing_instructions: str
-    brewing_time: int
-    alcohol_content: float
-
-class WineCreate(WineBase):
-    pass # No ID required for creation
-
-class WineResponse(WineBase):
-    id: int # ID returned in the response
-
-# --- Endpoints ---
-@app.post("/wines", response_model=WineResponse)
-def create_wine(wine: WineCreate, conn: sqlite3.Connection = Depends(get_db)):
+def create_wine(wine_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Create a new wine recipe in the database."""
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO wines (name, ingredients, description, brewing_instructions, brewing_time, alcohol_content)
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (
-        wine.name,
-        json.dumps(wine.ingredients),
-        wine.description,
-        wine.brewing_instructions,
-        wine.brewing_time,
-        wine.alcohol_content
+        wine_data['name'],
+        json.dumps(wine_data['ingredients']),
+        wine_data['description'],
+        wine_data['brewing_instructions'],
+        wine_data['brewing_time'],
+        wine_data['alcohol_content']
     ))
     conn.commit()
+    wine_id = cursor.lastrowid
+    conn.close()
     
-    # Return the newly created object
-    return {**wine.model_dump(), "id": cursor.lastrowid}
+    return {**wine_data, "id": wine_id}
 
-@app.get("/wines", response_model=List[WineResponse])
-def get_wines(conn: sqlite3.Connection = Depends(get_db)):
+def get_all_wines() -> List[Dict[str, Any]]:
+    """Retrieve all wines from the database."""
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM wines')
     rows = cursor.fetchall()
+    conn.close()
     
     wines = []
     for row in rows:
         wines.append({
             "id": row[0],
             "name": row[1],
-            "ingredients": json.loads(row[2]), # Safe deserialization
+            "ingredients": json.loads(row[2]),
             "description": row[3],
             "brewing_instructions": row[4],
             "brewing_time": row[5],
@@ -128,11 +104,13 @@ def get_wines(conn: sqlite3.Connection = Depends(get_db)):
         })
     return wines
 
-@app.get("/wines/{wine_id}", response_model=WineResponse)
-def get_wine(wine_id: int, conn: sqlite3.Connection = Depends(get_db)):
+def get_wine(wine_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieve a specific wine by ID."""
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM wines WHERE id = ?', (wine_id,))
     row = cursor.fetchone()
+    conn.close()
     
     if row:
         return {
@@ -144,41 +122,44 @@ def get_wine(wine_id: int, conn: sqlite3.Connection = Depends(get_db)):
             "brewing_time": row[5],
             "alcohol_content": row[6]
         }
-    
-    # Proper 404 handling
-    raise HTTPException(status_code=404, detail="Wine not found")
+    return None
 
-@app.delete("/wines/{wine_id}")
-def delete_wine(wine_id: int, conn: sqlite3.Connection = Depends(get_db)):
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM wines WHERE id = ?', (wine_id,))
-    conn.commit()
-    
-    if cursor.rowcount:
-        return {"message": "Wine deleted successfully"}
-        
-    # Proper 404 handling
-    raise HTTPException(status_code=404, detail="Wine not found")
-@app.put("/wines/{wine_id}", response_model=WineResponse)
-def update_wine(wine_id: int, wine: WineCreate, conn: sqlite3.Connection = Depends(get_db)):
+def update_wine(wine_id: int, wine_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Update an existing wine recipe."""
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
         UPDATE wines
         SET name = ?, ingredients = ?, description = ?, brewing_instructions = ?, brewing_time = ?, alcohol_content = ?
         WHERE id = ?
     ''', (
-        wine.name,
-        json.dumps(wine.ingredients),
-        wine.description,
-        wine.brewing_instructions,
-        wine.brewing_time,
-        wine.alcohol_content,
+        wine_data['name'],
+        json.dumps(wine_data['ingredients']),
+        wine_data['description'],
+        wine_data['brewing_instructions'],
+        wine_data['brewing_time'],
+        wine_data['alcohol_content'],
         wine_id
     ))
     conn.commit()
+    conn.close()
     
     if cursor.rowcount:
-        return {**wine.model_dump(), "id": wine_id}
+        return {**wine_data, "id": wine_id}
+    return None
+
+def delete_wine(wine_id: int) -> bool:
+    """Delete a wine recipe by ID."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM wines WHERE id = ?', (wine_id,))
+    conn.commit()
+    conn.close()
     
-    # Proper 404 handling
-    raise HTTPException(status_code=404, detail="Wine not found")
+    return cursor.rowcount > 0
+
+
+# Initialize database on module load
+if __name__ == "__main__":
+    init_db()
+    print("Database initialized successfully")
