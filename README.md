@@ -9,7 +9,15 @@ Team
 Marvin, Marina, Stefan, David
 
 
+<<<<<<< HEAD
+-Essensrezept einfügen,ändern,löschen
+-Weinrezepte einfügen,ändern,löschen
+-Weine für Essen vorschlagen
+-Rezepte berechnen für x Personen und X Liter
+-Datenbank für Rezepte mit sqlite3 essen.db wein.db
+=======
 -Benutzer anlegen und verwalten        David Marina Woche 1
+>>>>>>> 41fa9a7fda9224bcc0729d59b5bebe753d3917a0
 
 -Rechtevergabe                         David Marina woche 1
 
