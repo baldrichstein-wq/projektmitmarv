@@ -13,3 +13,27 @@ cursor.execute('''
 ''')
 conn.commit()
 conn.close()
+
+def benutzer_anlegen(name, email, passwort):
+    try:
+        conn = sqlite3.connect('benutzer.db')
+        cursor = conn.cursor()
+        
+        # Den Benutzer in die Tabelle einfuegen
+        cursor.execute('''
+            INSERT INTO benutzer (name, email, password) 
+            VALUES (?, ?, ?)
+        ''', (name, email, passwort))
+        
+        conn.commit()
+        print(f"Benutzer {name} erfolgreich angelegt!")
+    except sqlite3.IntegrityError:
+        print("Fehler: Diese E-Mail-Adresse existiert bereits.")
+    finally:
+        conn.close()
+
+# --- Programmstart ---
+init_db()
+
+# Testlauf:
+# benutzer_anlegen("Max Mustermann", "max@kochen.de", "superSicher123")
