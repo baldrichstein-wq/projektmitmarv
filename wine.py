@@ -159,3 +159,26 @@ def delete_wine(wine_id: int, conn: sqlite3.Connection = Depends(get_db)):
         
     # Proper 404 handling
     raise HTTPException(status_code=404, detail="Wine not found")
+@app.put("/wines/{wine_id}", response_model=WineResponse)
+def update_wine(wine_id: int, wine: WineCreate, conn: sqlite3.Connection = Depends(get_db)):
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE wines
+        SET name = ?, ingredients = ?, description = ?, brewing_instructions = ?, brewing_time = ?, alcohol_content = ?
+        WHERE id = ?
+    ''', (
+        wine.name,
+        json.dumps(wine.ingredients),
+        wine.description,
+        wine.brewing_instructions,
+        wine.brewing_time,
+        wine.alcohol_content,
+        wine_id
+    ))
+    conn.commit()
+    
+    if cursor.rowcount:
+        return {**wine.model_dump(), "id": wine_id}
+    
+    # Proper 404 handling
+    raise HTTPException(status_code=404, detail="Wine not found")
