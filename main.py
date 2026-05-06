@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash
 import os
-from functools import wraps
-
 import benutzer
 import wine
+import essen
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
@@ -12,53 +11,16 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
 benutzer.init_db()
 wine.init_db()
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user' not in session:
-            flash('Bitte melden Sie sich an, um diese Seite zu verwenden.', 'warning')
-            return redirect(url_for('anmeldung'))
-        return f(*args, **kwargs)
-    return decorated_function
-
 @app.route('/')
 def home():
-    user_name = session.get('user', {}).get('name', 'Besucher')
+    user_name = 'Besucher'
     return render_template('index.html', name=user_name)
 
 @app.route('/ueber-uns')
 def ueber_uns():
     return render_template('ueber-uns.html')
 
-@app.route('/anmeldung', methods=['GET', 'POST'])
-def anmeldung():
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
-
-        if not email or not password:
-            flash('Bitte füllen Sie alle Felder aus.', 'danger')
-            return redirect(url_for('anmeldung'))
-
-        user = benutzer.nutzer_anmeldung(email, password)
-        if user:
-            session['user'] = user
-            flash(f'Willkommen zurück, {user["name"]}!', 'success')
-            return redirect(url_for('home'))
-        else:
-            flash('Ungültige Anmeldedaten.', 'danger')
-            return redirect(url_for('anmeldung'))
-
-    return render_template('anmeldung.html')
-
-@app.route('/abmeldung')
-def abmeldung():
-    session.pop('user', None)
-    flash('Sie wurden erfolgreich abgemeldet.', 'info')
-    return redirect(url_for('home'))
-
 @app.route('/benutzer', methods=['GET', 'POST'])
-@login_required
 def verwalte_benutzer():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -77,7 +39,6 @@ def verwalte_benutzer():
     return render_template('benutzer.html', users=users)
 
 @app.route('/wein', methods=['GET', 'POST'])
-@login_required
 def verwalte_wein():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -113,7 +74,6 @@ def verwalte_wein():
     return render_template('wein.html', wines=wines)
 
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
-@login_required
 def loesche_wein(wine_id):
     deleted = wine.delete_wine(wine_id)
     if deleted:
@@ -122,5 +82,46 @@ def loesche_wein(wine_id):
         flash('Wein nicht gefunden.', 'danger')
     return redirect(url_for('verwalte_wein'))
 
+@app.route('/essen', methods=['GET', 'POST'])
+def verwalte_essen():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        ingredients = request.form.get('ingredients', '').strip()
+        description = request.form.get('description', '').strip()
+        cooking_instructions = request.form.get('cooking_instructions', '').strip()
+        cooking_time = request.form.get('cooking_time', '').strip()
+
+        if not name or not ingredients or not description:
+            flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
+            return redirect(url_for('verwalte_essen'))
+
+        try:
+            cooking_time_int = int(cooking_time) if cooking_time else 0
+        except ValueError:
+            flash('Kochzeit muss eine Zahl sein.', 'danger')
+            return redirect(url_for('verwalte_essen'))
+
+        essen.add_essen(
+            name=name,
+            ingredients=[item.strip() for item in ingredients.split(',') if item.strip()],
+            description=description,
+            cooking_instructions=cooking_instructions,
+            cooking_time=cooking_time_int,
+        )
+        flash(f"Essen '{name}' wurde gespeichert.", 'success')
+        return redirect(url_for('verwalte_essen'))
+
+    essens = essen.get_all_essens()
+    return render_template('essen.html', essens=essens)
+
+@app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
+def loesche_essen(essen_id):
+    deleted = essen.delete_essen(essen_id)
+    if deleted:
+        flash('Essen erfolgreich gelöscht.', 'success')
+    else:
+        flash('Essen nicht gefunden.', 'danger')
+    return redirect(url_for('verwalte_essen'))
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=True)
