@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 import os
+from functools import wraps
+
 import benutzer
 import wine
 
@@ -10,16 +12,53 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
 benutzer.init_db()
 wine.init_db()
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            flash('Bitte melden Sie sich an, um diese Seite zu verwenden.', 'warning')
+            return redirect(url_for('anmeldung'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/')
 def home():
-    user_name = 'Besucher'
+    user_name = session.get('user', {}).get('name', 'Besucher')
     return render_template('index.html', name=user_name)
 
 @app.route('/ueber-uns')
 def ueber_uns():
     return render_template('ueber-uns.html')
 
+@app.route('/anmeldung', methods=['GET', 'POST'])
+def anmeldung():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if not email or not password:
+            flash('Bitte füllen Sie alle Felder aus.', 'danger')
+            return redirect(url_for('anmeldung'))
+
+        user = benutzer.nutzer_anmeldung(email, password)
+        if user:
+            session['user'] = user
+            flash(f'Willkommen zurück, {user["name"]}!', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Ungültige Anmeldedaten.', 'danger')
+            return redirect(url_for('anmeldung'))
+
+    return render_template('anmeldung.html')
+
+@app.route('/abmeldung')
+def abmeldung():
+    session.pop('user', None)
+    flash('Sie wurden erfolgreich abgemeldet.', 'info')
+    return redirect(url_for('home'))
+
 @app.route('/benutzer', methods=['GET', 'POST'])
+@login_required
 def verwalte_benutzer():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -38,6 +77,7 @@ def verwalte_benutzer():
     return render_template('benutzer.html', users=users)
 
 @app.route('/wein', methods=['GET', 'POST'])
+@login_required
 def verwalte_wein():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -73,6 +113,7 @@ def verwalte_wein():
     return render_template('wein.html', wines=wines)
 
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
+@login_required
 def loesche_wein(wine_id):
     deleted = wine.delete_wine(wine_id)
     if deleted:
@@ -82,4 +123,4 @@ def loesche_wein(wine_id):
     return redirect(url_for('verwalte_wein'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
