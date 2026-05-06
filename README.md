@@ -8,13 +8,13 @@ Team
 
 Marvin, Marina, Stefan, David
 
--main.py Einbindung der wine.py, benutzer.py und essen.py David Woche 1 erstellen und testen des Programms Woche 2 konvertieren zur fastapi wenn das Programm läuft. 
+-main.py Einbindung der wine.py, benutzer.py und essen.py mit Flask um die für die HTML zu gewährleisten David Woche 1 und 2
 
--Benutzer anlegen und verwalten        David Marina Woche 1
+-Benutzer anlegen und verwalten       Marina Woche 1
 
--Rechtevergabe                         David Marina woche 1
+-Rechtevergabe                        Marvin Marina woche 1
 
--Essensrezept einfügen,ändern,löschen  Stefan  woche 1
+-Essensrezept einfügen,ändern,löschen  Stefan David woche 1
 
 -Weinrezepte einfügen,ändern,löschen   Marvin verbessern woche 1
 
@@ -26,15 +26,15 @@ Marvin, Marina, Stefan, David
 
 -Datenbank für Benutzer David Marina Woche 1
 
--Html als GUI Marvin Woche 2
+- Html als GUI Marvin Woche 2
 
--Kommentar Sektion für Rezepte und bewertungsdurchschnitt anzeige sowie bewertungen  Woche 2
+- Kommentar Sektion für Rezepte und bewertungsdurchschnitt anzeige sowie bewertungen  Woche 2
 
--Suchfunktion für den zweck der suche bestimmter rezepte Woche 2
+- Suchfunktion für den zweck der suche bestimmter rezepte Woche 2
 
--funktion für das erstellen von rezepten anderer nutzer global sichtbar Woche 1 und 2
+- funktion für das erstellen von rezepten anderer nutzer global sichtbar Woche 1 und 2
 
-
+Nutzung von Flask statt Fastapi
 
 IDEEN
 
