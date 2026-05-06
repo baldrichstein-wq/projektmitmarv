@@ -1,70 +1,87 @@
-import benutzer
-import essen
-import wine
+from flask import Flask, render_template, request, redirect, url_for, flash
 import os
-import sys
 
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
+import benutzer
+import wine
 
-def print_header():
-    print("=" * 45)
-    print(f"{'🏠 KÜCHEN- & KELLER-MANAGER':^45}")
-    print("=" * 45)
+app = Flask(__name__, template_folder='templates')
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
 
-def main_menu():
-    while True:
-        clear_screen()
-        print_header()
-        print("[1] 👤 Neuen Benutzer anlegen")
-        print("[2] 🍲 Speisekarte anzeigen (DB-Status)")
-        print("[3] 🍷 Wein-Keller verwalten (DB-Status)")
-        print("[4] ⚙️  System-Datenbanken initialisieren")
-        print("[0] ❌ Beenden")
-        print("-" * 45)
-        
-        auswahl = input("Wählen Sie eine Option: ")
-
-        if auswahl == "1":
-            print("\n--- Benutzer registrieren ---")
-            name = input("Name: ")
-            email = input("E-Mail: ")
-            pw = input("Passwort: ")
-            benutzer.benutzer_anlegen(name, email, pw)
-            input("\nDrücken Sie Enter zum Fortfahren...")
-
-        elif auswahl == "2":
-            print("\n--- Speise-Datenbank Status ---")
-            # In essen.py wird die DB beim Import automatisch erstellt.
-            # Hier könnte man eine Abfrage-Funktion ergänzen.
-            print("Datenbank 'essen.db' ist aktiv.")
-            print("Tabelle 'essen' wurde geprüft.")
-            input("\nDrücken Sie Enter zum Fortfahren...")
-
-        elif auswahl == "3":
-            print("\n--- Wein-Verwaltung ---")
-            print("\nInitialisiere Wein-Tabelle...")
-            wine.init_db()
-            print("Erledigt.")
-            input("\nDrücken Sie Enter zum Fortfahren...")
-
-        elif auswahl == "4":
-            print("\n--- System-Check ---")
-            benutzer.init_db()
-            wine.init_db()
-            print("[✔] Alle Datenbanken (Benutzer, Essen, Wein) sind bereit.")
-            input("\nDrücken Sie Enter zum Fortfahren...")
-
-        elif auswahl == "0":
-            print("\nProgramm beendet. Auf Wiedersehen!")
-            sys.exit()
-
-        else:
-            print("\n[!] Ungültige Auswahl, bitte versuchen Sie es erneut.")
-            input("\nDrücken Sie Enter...")
-
-if __name__ == "__main__":
-    # Initialer Start der Datenbanken
+@app.before_first_request
+def setup_databases():
     benutzer.init_db()
     wine.init_db()
-    main_menu()
+
+@app.route('/')
+def home():
+    user_name = 'Besucher'
+    return render_template('index.html', name=user_name)
+
+@app.route('/ueber-uns')
+def ueber_uns():
+    return render_template('ueber-uns.html')
+
+@app.route('/benutzer', methods=['GET', 'POST'])
+def verwalte_benutzer():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if not name or not email or not password:
+            flash('Bitte füllen Sie alle Felder aus.', 'danger')
+            return redirect(url_for('verwalte_benutzer'))
+
+        success, message = benutzer.benutzer_anlegen(name, email, password)
+        flash(message, 'success' if success else 'danger')
+        return redirect(url_for('verwalte_benutzer'))
+
+    users = benutzer.get_all_users()
+    return render_template('benutzer.html', users=users)
+
+@app.route('/wein', methods=['GET', 'POST'])
+def verwalte_wein():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        ingredients = request.form.get('ingredients', '').strip()
+        description = request.form.get('description', '').strip()
+        brewing_instructions = request.form.get('brewing_instructions', '').strip()
+        brewing_time = request.form.get('brewing_time', '').strip()
+        alcohol_content = request.form.get('alcohol_content', '').strip()
+
+        if not name or not ingredients or not description:
+            flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
+            return redirect(url_for('verwalte_wein'))
+
+        try:
+            brewing_time_int = int(brewing_time) if brewing_time else 0
+            alcohol_float = float(alcohol_content) if alcohol_content else 0.0
+        except ValueError:
+            flash('Gärzeit muss eine Zahl und Alkoholgehalt eine Dezimalzahl sein.', 'danger')
+            return redirect(url_for('verwalte_wein'))
+
+        wine.add_wine(
+            name=name,
+            ingredients=[item.strip() for item in ingredients.split(',') if item.strip()],
+            description=description,
+            brewing_instructions=brewing_instructions,
+            brewing_time=brewing_time_int,
+            alcohol_content=alcohol_float,
+        )
+        flash(f"Wein '{name}' wurde gespeichert.", 'success')
+        return redirect(url_for('verwalte_wein'))
+
+    wines = wine.get_all_wines()
+    return render_template('wein.html', wines=wines)
+
+@app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
+def loesche_wein(wine_id):
+    deleted = wine.delete_wine(wine_id)
+    if deleted:
+        flash('Wein erfolgreich gelöscht.', 'success')
+    else:
+        flash('Wein nicht gefunden.', 'danger')
+    return redirect(url_for('verwalte_wein'))
+
+if __name__ == '__main__':
+    app.run(debug=True)

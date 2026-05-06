@@ -8,6 +8,7 @@ Team
 
 Marvin, Marina, Stefan, David
 
+-main.py Einbindung der wine.py, benutzer.py und essen.py David Woche 1 erstellen und testen des Programms Woche 2 konvertieren zur fastapi wenn das Programm läuft. 
 
 -Benutzer anlegen und verwalten        David Marina Woche 1
 
