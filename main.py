@@ -7,10 +7,9 @@ import wine
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
 
-@app.before_first_request
-def setup_databases():
-    benutzer.init_db()
-    wine.init_db()
+# Initialisiere Datenbanken beim Start
+benutzer.init_db()
+wine.init_db()
 
 @app.route('/')
 def home():
