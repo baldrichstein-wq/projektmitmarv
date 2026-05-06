@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import os
 import benutzer
 import wine
+import essen
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
@@ -80,6 +81,47 @@ def loesche_wein(wine_id):
     else:
         flash('Wein nicht gefunden.', 'danger')
     return redirect(url_for('verwalte_wein'))
+
+@app.route('/essen', methods=['GET', 'POST'])
+def verwalte_essen():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        ingredients = request.form.get('ingredients', '').strip()
+        description = request.form.get('description', '').strip()
+        cooking_instructions = request.form.get('cooking_instructions', '').strip()
+        cooking_time = request.form.get('cooking_time', '').strip()
+
+        if not name or not ingredients or not description:
+            flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
+            return redirect(url_for('verwalte_essen'))
+
+        try:
+            cooking_time_int = int(cooking_time) if cooking_time else 0
+        except ValueError:
+            flash('Kochzeit muss eine Zahl sein.', 'danger')
+            return redirect(url_for('verwalte_essen'))
+
+        essen.add_essen(
+            name=name,
+            ingredients=[item.strip() for item in ingredients.split(',') if item.strip()],
+            description=description,
+            cooking_instructions=cooking_instructions,
+            cooking_time=cooking_time_int,
+        )
+        flash(f"Essen '{name}' wurde gespeichert.", 'success')
+        return redirect(url_for('verwalte_essen'))
+
+    essens = essen.get_all_essens()
+    return render_template('essen.html', essens=essens)
+
+@app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
+def loesche_essen(essen_id):
+    deleted = essen.delete_essen(essen_id)
+    if deleted:
+        flash('Essen erfolgreich gelöscht.', 'success')
+    else:
+        flash('Essen nicht gefunden.', 'danger')
+    return redirect(url_for('verwalte_essen'))
 
 if __name__ == '__main__':
     app.run(debug=True)
