@@ -26,7 +26,7 @@ def benutzer_anlegen(name, email, passwort, rolle="user"):
         cursor.execute('''
             INSERT INTO benutzer (name, email, password, rolle)
             VALUES (?, ?, ?, ?)
-        ''', (name, email, passwort, rolle))
+        ''', (name, email, hash(passwort), rolle))
         conn.commit()
         return True, f"Benutzer {name} als '{rolle}' erfolgreich angelegt!"
     except sqlite3.IntegrityError:
