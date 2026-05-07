@@ -8,6 +8,9 @@ Team
 
 Marvin, Marina, Stefan, David
 
+
+07.05. Fehlerbehebung und Fehlersuche und wieder auf tauchen von Fehlern David Marvin Marina Stefan
+
 -main.py Einbindung der wine.py, benutzer.py und essen.py mit Flask um die für die HTML zu gewährleisten David Woche 1 und 2
 
 -Benutzer anlegen und verwalten       Marina Woche 1
