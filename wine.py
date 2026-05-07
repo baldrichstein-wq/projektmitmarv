@@ -117,3 +117,21 @@ def get_wine(wine_id):
             'alcohol_content': row[6],
         }
     return None
+def update_wine(wine_id, name, ingredients, description, brewing_instructions, brewing_time, alcohol_content):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE wines
+            SET name = ?, ingredients = ?, description = ?, brewing_instructions = ?, brewing_time = ?, alcohol_content = ?
+            WHERE id = ?
+        ''', (
+            name,
+            json.dumps(ingredients),
+            description,
+            brewing_instructions,
+            brewing_time,
+            alcohol_content,
+            wine_id
+        ))
+        conn.commit()
+        return cursor.rowcount > 0

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 import os
 import benutzer
 import wine
@@ -13,7 +13,8 @@ wine.init_db()
 
 @app.route('/')
 def home():
-    user_name = 'Besucher'
+    user = session.get('user')
+    user_name = user['name'] if user else 'Besucher'
     return render_template('index.html', name=user_name)
 
 @app.route('/ueber-uns')
@@ -50,13 +51,18 @@ def anmeldung():
 
         user = benutzer.benutzer_anmelden(email, password)
         if user:
-            ['user'] = user.nutzer_anmeldung(email, password)
             flash('Erfolgreich angemeldet.', 'success')
             return redirect(url_for('home'))
         else:
             flash('Ungültige Anmeldedaten.', 'danger')
 
     return render_template('anmeldung.html')
+
+@app.route('/abmeldung')
+def abmeldung():
+    benutzer.benutzer_abmelden()
+    flash('Erfolgreich abgemeldet.', 'success')
+    return redirect(url_for('home'))
 
 @app.route('/wein', methods=['GET', 'POST'])
 def verwalte_wein():

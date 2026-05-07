@@ -1,4 +1,5 @@
 import sqlite3
+from flask import session
 
 DB_FILE = 'benutzer.db'
 
@@ -33,6 +34,20 @@ def nutzer_anmeldung(email, passwort):
             'rolle': user[3]
         }
     return None
+
+def benutzer_anmelden(email, passwort):
+    """Meldet den Benutzer an und speichert ihn in der Session."""
+    user = nutzer_anmeldung(email, passwort)
+    if user:
+        session['user'] = user
+        return user
+    return None
+
+
+def benutzer_abmelden():
+    """Meldet den Benutzer ab und entfernt ihn aus der Session."""
+    session.pop('user', None)
+
 
 def besucher_rechten():
     """Gibt die Standardrechte für Besucher zurück."""
