@@ -14,19 +14,37 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('home') }}">Startseite</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="{{ url_for('ueber_uns') }}">Über uns</a>
                     </li>
+                    {% if session.get('user') %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('verwalte_wein') }}">Wein</a>
                     </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if session.get('user') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ session.user.name }}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('abmeldung') }}">Abmelden</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('anmeldung') }}">Anmeldung</a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

@@ -18,6 +18,29 @@ def init_db():
     conn.commit()
     conn.close()
 
+def nutzer_anmeldung(email, passwort):
+    """Überprüft die Anmeldedaten eines Benutzers."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, name, email, rolle FROM benutzer WHERE email = ? AND password = ?', (email, passwort))
+    user = cursor.fetchone()
+    conn.close()
+    if user:
+        return {
+            'id': user[0],
+            'name': user[1],
+            'email': user[2],
+            'rolle': user[3]
+        }
+    return None
+
+def besucher_rechten():
+    """Gibt die Standardrechte für Besucher zurück."""
+    return {
+        'rolle': 'user',
+        'rechte': ['lesen']
+    } 
+
 def benutzer_anlegen(name, email, passwort, rolle="user"):
     """Fügt einen neuen Benutzer hinzu. (Standardrolle: user)."""
     try:
@@ -26,7 +49,7 @@ def benutzer_anlegen(name, email, passwort, rolle="user"):
         cursor.execute('''
             INSERT INTO benutzer (name, email, password, rolle)
             VALUES (?, ?, ?, ?)
-        ''', (name, email, hash(passwort), rolle))
+        ''', (name, email, passwort, rolle))
         conn.commit()
         return True, f"Benutzer {name} als '{rolle}' erfolgreich angelegt!"
     except sqlite3.IntegrityError:
