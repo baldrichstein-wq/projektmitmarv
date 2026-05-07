@@ -21,12 +21,33 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('ueber_uns') }}">Über uns</a>
                     </li>
+                    {% if session.get('user') %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="{{ url_for('verwalte_wein') }}">Wein</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{{ url_for('verwalte_essen') }}">Essen</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if session.get('user') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ session.user.name }}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('abmeldung') }}">Abmelden</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('anmeldung') }}">Anmeldung</a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -88,6 +109,7 @@
                             <td>{{ essen.id }}</td>
                             <td>{{ essen.name }}</td>
                             <td>{{ essen.Kochzeit }} Stunden</td>
+                            <td>{{ essen.kochzeit }} Stunden</td>
                             <td>
                                 <form method="post" action="{{ url_for('loesche_essen', essen_id=essen.id) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
