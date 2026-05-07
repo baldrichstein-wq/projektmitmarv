@@ -9,7 +9,7 @@ Team
 Marvin, Marina, Stefan, David
 
 
-07.05. Fehlerbehebung und Fehlersuche und wieder auf tauchen von Fehlern David Marvin Marina Stefan
+07.05. Fehlerbehebung und Fehlersuche und wieder auf tauchen von Fehlern David Marvin Marina Stefan  (wir sind Frustriert Mac ist Scheiße)
 
 
 
