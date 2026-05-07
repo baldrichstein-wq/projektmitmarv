@@ -108,6 +108,51 @@ def loesche_wein(wine_id):
         flash('Wein nicht gefunden.', 'danger')
     return redirect(url_for('verwalte_wein'))
 
+@app.route('/wein/bearbeiten/<int:wine_id>', methods=['GET', 'POST'])
+def bearbeite_wein(wine_id):
+    wine_item = wine.get_wine(wine_id)
+    if not wine_item:
+        flash('Wein nicht gefunden.', 'danger')
+        return redirect(url_for('verwalte_wein'))
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        ingredients = request.form.get('ingredients', '').strip()
+        description = request.form.get('description', '').strip()
+        brewing_instructions = request.form.get('brewing_instructions', '').strip()
+        brewing_time = request.form.get('brewing_time', '').strip()
+        alcohol_content = request.form.get('alcohol_content', '').strip()
+
+        if not name or not ingredients or not description:
+            flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
+            return redirect(url_for('bearbeite_wein', wine_id=wine_id))
+
+        try:
+            brewing_time_int = int(brewing_time) if brewing_time else 0
+            alcohol_float = float(alcohol_content) if alcohol_content else 0.0
+        except ValueError:
+            flash('Gärzeit muss eine Zahl und Alkoholgehalt eine Dezimalzahl sein.', 'danger')
+            return redirect(url_for('bearbeite_wein', wine_id=wine_id))
+
+        updated = wine.update_wine(
+            wine_id,
+            name=name,
+            ingredients=[item.strip() for item in ingredients.split(',') if item.strip()],
+            description=description,
+            brewing_instructions=brewing_instructions,
+            brewing_time=brewing_time_int,
+            alcohol_content=alcohol_float,
+        )
+
+        if updated:
+            flash(f"Wein '{name}' wurde aktualisiert.", 'success')
+        else:
+            flash('Fehler beim Aktualisieren des Weins.', 'danger')
+
+        return redirect(url_for('verwalte_wein'))
+
+    return render_template('wein_edit.html', wine=wine_item)
+
 @app.route('/essen', methods=['GET', 'POST'])
 def verwalte_essen():
     if request.method == 'POST':
@@ -137,8 +182,8 @@ def verwalte_essen():
         flash(f"Essen '{name}' wurde gespeichert.", 'success')
         return redirect(url_for('verwalte_essen'))
 
-    essens = essen.get_all_essens()
-    return render_template('essen.html', essens=essens)
+    essens = essen.get_all_essen()
+    return render_template('essen.html', essen=essen)
 
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
