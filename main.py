@@ -20,6 +20,48 @@ def home():
 @app.route('/ueber-uns')
 def ueber_uns():
     return render_template('ueber-uns.html')
+@app.route('/wein_edit/<int:wine_id>', methods=['GET', 'POST'])
+def wein_edit(wine_id):
+    wine_obj = wine.get_wine(wine_id)
+    if not wine_obj:
+        flash('Wein nicht gefunden.', 'danger')
+        return redirect(url_for('verwalte_wein'))
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        ingredients = request.form.get('ingredients', '').strip()
+        description = request.form.get('description', '').strip()
+        brewing_instructions = request.form.get('brewing_instructions', '').strip()
+        brewing_time = request.form.get('brewing_time', '').strip()
+        alcohol_content = request.form.get('alcohol_content', '').strip()
+
+        if not name or not ingredients or not description:
+            flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
+            return redirect(url_for('wein_edit', wine_id=wine_id))
+
+        try:
+            brewing_time_int = int(brewing_time) if brewing_time else 0
+            alcohol_float = float(alcohol_content) if alcohol_content else 0.0
+        except ValueError:
+            flash('Gärzeit muss eine Zahl und Alkoholgehalt eine Dezimalzahl sein.', 'danger')
+            return redirect(url_for('wein_edit', wine_id=wine_id))
+
+        updated = wine.update_wine(
+            wine_id,
+            name=name,
+            ingredients=[item.strip() for item in ingredients.split(',') if item.strip()],
+            description=description,
+            brewing_instructions=brewing_instructions,
+            brewing_time=brewing_time_int,
+            alcohol_content=alcohol_float,
+        )
+
+        if updated:
+            flash(f"Wein '{name}' wurde aktualisiert.", 'success')
+        else:
+            flash('Fehler beim Aktualisieren des Weins.', 'danger')
+
+        return redirect(url_for('verwalte_wein'))
+    return render_template('wein_edit.html', wine=wine_obj)
 
 @app.route('/benutzer', methods=['GET', 'POST'])
 def verwalte_benutzer():

@@ -1,5 +1,4 @@
 import sqlite3
-import json
 
 DB_FILE = 'essen.db'
 
