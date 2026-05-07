@@ -1,5 +1,5 @@
 import sqlite3
-
+import json
 DB_FILE = 'essen.db'
 
 PREDEFINED_Essen = {
