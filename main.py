@@ -38,6 +38,26 @@ def verwalte_benutzer():
     users = benutzer.get_all_users()
     return render_template('benutzer.html', users=users)
 
+@app.route('/anmeldung', methods=['GET', 'POST'])
+def anmeldung():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if not email or not password:
+            flash('Bitte füllen Sie alle Felder aus.', 'danger')
+            return redirect(url_for('anmeldung'))
+
+        user = benutzer.benutzer_anmelden(email, password)
+        if user:
+            ['user'] = user.nutzer_anmeldung(email, password)
+            flash('Erfolgreich angemeldet.', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Ungültige Anmeldedaten.', 'danger')
+
+    return render_template('anmeldung.html')
+
 @app.route('/wein', methods=['GET', 'POST'])
 def verwalte_wein():
     if request.method == 'POST':
