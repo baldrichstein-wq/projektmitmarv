@@ -5,6 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Über das Team</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+        <style>
+        body {
+            /* Pfad zum Bild */
+            background-image: url('images/Hintergrund1.jpg');
+    
+            /* Bild fixieren (scrollt nicht mit) */
+            background-attachment: fixed;
+    
+            /* Bild zentrieren */
+            background-position: center;
+    
+            /* Bild so skalieren, dass der ganze Bereich bedeckt ist */
+            background-size: cover;
+    
+            /* Verhindert, dass das Bild gekachelt wird */
+            background-repeat: no-repeat;
+    
+            /* Fallback-Farbe, falls das Bild nicht lädt */
+            background-color: #f4e3d7; 
+    
+            margin: 0;
+            padding: 0;
+        }    
+        .container {
+            color: #FDFD96; /* Oder eine Farbe deiner Wahl */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Macht den Text auf dem unruhigen Hintergrund besser lesbar */
+            font-weight: bold;   /* Fett */
+            font-weight: normal; /* Normaler Text (Standard) */
+            font-weight: lighter;/* Dünner als der Elternelement-Text */
+            font-weight: bolder; /* Noch fetter als das Elternelement */
+            /* Eine elegante Serif-Schrift (passend zum Kochbuch-Look) */
+            font-family: "Times New Roman", Times, serif;
+
+            /* ODER eine moderne, saubere Schrift */
+            /* font-family: Arial, Helvetica, sans-serif; */
+        }
+        </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -52,10 +89,11 @@
     <div class="container mt-5">
         <h1>Über Uns</h1>
         <p class="lead">Hier erfahren Sie alles über das Team hinter dieser Seite.</p>
-        <p>Diese Seite entstand in Zusammenarbeit mit David, Marina, Stefan und mir.</p>
-        <p>Wir möchten Rezepte, Weinempfehlungen und Hobby-Brauideen in einer einfachen Webanwendung verbinden.</p>
-        <p>Das Ziel ist eine Projektoberfläche, die Flask, SQLite und Bootstrap nutzt.</p>
+        <p class="card-text">Diese Seite entstand in Zusammenarbeit mit David, Marina, Stefan und Marvin. Wir sind die Klasse 25-11 vom Syntax Institut.</p>
+        <p class="card-text">Wir möchten Rezepte, Weinempfehlungen und Hobby-Brauideen in einer einfachen Webanwendung verbinden.</p>
+        <p class="card-text">Das Ziel ist eine Projektoberfläche, die Flask, SQLite und Bootstrap nutzt.</p>
         <a href="{{ url_for('home') }}" class="btn btn-secondary mt-3">Zurück zur Startseite</a>
+        
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
