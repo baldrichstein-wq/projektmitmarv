@@ -104,8 +104,23 @@ def mache_zu_admin(email):
 
 # --- Programmstart ---
 if __name__ == "__main__":
+    # 1. Datenbank sicherheitshalber initialisieren
     init_db()
-
+    
+    # --- FALL 1: Max zum Admin machen ---
+    # Da Max laut deinem vorherigen Code schon existiert, nutzen wir die Update-Funktion
+    mache_zu_admin("max@kochen.de")
+    
+    # --- FALL 2: "Admin Chef" als User anlegen ---
+    # Auch wenn der Name "Admin" enthält, legen wir ihn hier explizit mit der Rolle "user" an
+    success, msg = benutzer_anlegen("Admin Chef", "chef@firma.de", "geheim123", rolle="user")
+    print(msg)
+    
+    # Kontrolle: Alle Nutzer ausgeben, um zu sehen ob es geklappt hat
+    print("\nAktuelle Benutzerliste:")
+    for u in get_all_users():
+        print(f"ID: {u['id']} | Name: {u['name']} | Rolle: {u['rolle']}")
+    
     benutzer_anlegen("max Mustermann", "max@kochen.de", "superSicher123")
     mache_zu_admin("max@kochen.de")
     benutzer_anlegen("Admin Chef", "chef@firma.de", "geheim123", rolle="admin")
