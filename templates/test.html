@@ -8,7 +8,7 @@
     <style>
         body {
             /* Pfad zum Bild */
-            background-image: url('images/Hintergrund1.jpg');
+            background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
     
             /* Bild fixieren (scrollt nicht mit) */
             background-attachment: fixed;
