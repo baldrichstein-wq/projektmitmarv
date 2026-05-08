@@ -1,5 +1,6 @@
 import sqlite3
 import json
+table_name = 'essen'
 DB_FILE = 'essen.db'
 
 PREDEFINED_Essen = {
@@ -29,7 +30,7 @@ def init_db():
                 Zutaten TEXT NOT NULL,
                 description TEXT,
                 kochanweisung TEXT,
-                Kochzeit INTEGER,
+                Kochzeit INTEGER
             )
         ''')
 
@@ -48,7 +49,7 @@ def init_db():
             conn.commit()
 
 
-def add_essen(name, Zutaten, description, kochanweisung, Kochzeit):
+def add_essen(name, ingredients, description, cooking_instructions, cooking_time):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute('''
@@ -56,10 +57,10 @@ def add_essen(name, Zutaten, description, kochanweisung, Kochzeit):
             VALUES (?, ?, ?, ?, ?)
         ''', (
             name,
-            json.dumps(Zutaten),
+            json.dumps(ingredients),
             description,
-            kochanweisung,
-            Kochzeit,
+            cooking_instructions,
+            cooking_time,
         ))
         conn.commit()
         return cursor.lastrowid
@@ -71,9 +72,9 @@ def get_all_essen():
     cursor.execute('SELECT id, name, Zutaten, description, kochanweisung, Kochzeit FROM essen ORDER BY id')
     rows = cursor.fetchall()
     conn.close()
-    essen= []
+    essen_list = []
     for row in rows:
-        essen.append({
+        essen_list.append({
             'id': row[0],
             'name': row[1],
             'ingredients': json.loads(row[2]),
@@ -81,7 +82,7 @@ def get_all_essen():
             'kochanweisung': row[4],
             'Kochzeit': row[5]
         })
-    return essen
+    return essen_list
 
 
 def delete_essen(essen_id):

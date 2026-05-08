@@ -10,6 +10,7 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
 # Initialisiere Datenbanken beim Start
 benutzer.init_db()
 wine.init_db()
+essen.init_db()
 
 @app.route('/')
 def home():
@@ -137,8 +138,8 @@ def verwalte_essen():
         flash(f"Essen '{name}' wurde gespeichert.", 'success')
         return redirect(url_for('verwalte_essen'))
 
-    essen = essen.get_all_essen()
-    return render_template('essen.html', essen=essen)
+    liste_essen = essen.get_all_essen()
+    return render_template('essen.html', essen=liste_essen)
 
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
