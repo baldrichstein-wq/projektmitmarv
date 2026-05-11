@@ -148,6 +148,21 @@ def loesche_essen(essen_id):
     else:
         flash('Essen nicht gefunden.', 'danger')
     return redirect(url_for('verwalte_essen'))
+@app.route('/suche')
+def suche():
+    query = request.args.get('q', '').strip().lower()
+    ergebnisse_wein = []
+    ergebnisse_essen = []
 
+    if query:
+        # Suche in Weinen
+        alle_weine = wine.get_all_wines()
+        ergebnisse_wein = [w for w in alle_weine if query in w['name'].lower() or query in w['description'].lower()]
+        
+        # Suche in Essen
+        alle_speisen = essen.get_all_essen()
+        ergebnisse_essen = [e for e in alle_speisen if query in e['name'].lower() or query in e['description'].lower()]
+
+    return render_template('such.html', query=query, weine=ergebnisse_wein, speisen=ergebnisse_essen)
 if __name__ == '__main__':
     app.run(debug=True)
