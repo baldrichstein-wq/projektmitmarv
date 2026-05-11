@@ -62,6 +62,14 @@ def get_all_users():
     conn.close()
     return [{'id': r[0], 'name': r[1], 'email': r[2], 'rolle': r[3]} for r in rows]
 
+def benutzer_anmelden(email, passwort):
+    """Alias für nutzer_anmeldung - prüft Anmeldedaten und gibt User-Daten zurück."""
+    return nutzer_anmeldung(email, passwort)
+
+def benutzer_abmelden():
+    """Logout-Funktion (Session-Handling kann später erweitert werden)."""
+    pass
+
 def mache_zu_admin(email):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
