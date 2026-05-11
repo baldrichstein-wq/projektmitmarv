@@ -162,6 +162,6 @@ def suche():
         alle_speisen = essen.get_all_essen()
         ergebnisse_essen = [e for e in alle_speisen if query in e['name'].lower() or query in e['description'].lower()]
 
-    return render_template('such.html', query=query, weine=ergebnisse_wein, speisen=ergebnisse_essen)
+    return render_template('suche.html', query=query, weine=ergebnisse_wein, speisen=ergebnisse_essen)
 if __name__ == '__main__':
     app.run(debug=True)
