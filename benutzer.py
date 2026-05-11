@@ -1,10 +1,8 @@
 import sqlite3
-from flask import session
 
 DB_FILE = 'benutzer.db'
 
 def init_db():
-    """Erstellt die Datenbank mit der Spalte 'rolle'."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('''
@@ -20,7 +18,7 @@ def init_db():
     conn.close()
 
 def nutzer_anmeldung(email, passwort):
-    """Überprüft die Anmeldedaten eines Benutzers."""
+    """Überprüft Anmeldedaten und gibt User-Daten zurück (ohne Session)."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('SELECT id, name, email, rolle FROM benutzer WHERE email = ? AND password = ?', (email, passwort))
@@ -35,29 +33,13 @@ def nutzer_anmeldung(email, passwort):
         }
     return None
 
-def benutzer_anmelden(email, passwort):
-    """Meldet den Benutzer an und speichert ihn in der Session."""
-    user = nutzer_anmeldung(email, passwort)
-    if user:
-        session['user'] = user
-        return user
-    return None
-
-
-def benutzer_abmelden():
-    """Meldet den Benutzer ab und entfernt ihn aus der Session."""
-    session.pop('user', None)
-
-
 def besucher_rechten():
-    """Gibt die Standardrechte für Besucher zurück."""
     return {
         'rolle': 'user',
         'rechte': ['lesen']
     } 
 
 def benutzer_anlegen(name, email, passwort, rolle="user"):
-    """Fügt einen neuen Benutzer hinzu. (Standardrolle: user)."""
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
@@ -78,49 +60,22 @@ def get_all_users():
     cursor.execute('SELECT id, name, email, rolle FROM benutzer ORDER BY id')
     rows = cursor.fetchall()
     conn.close()
-    return [
-        {
-            'id': row[0],
-            'name': row[1],
-            'email': row[2],
-            'rolle': row[3]
-        }
-        for row in rows
-    ]
+    return [{'id': r[0], 'name': r[1], 'email': r[2], 'rolle': r[3]} for r in rows]
+
+def benutzer_anmelden(email, passwort):
+    """Alias für nutzer_anmeldung - prüft Anmeldedaten und gibt User-Daten zurück."""
+    return nutzer_anmeldung(email, passwort)
+
+def benutzer_abmelden():
+    """Logout-Funktion (Session-Handling kann später erweitert werden)."""
+    pass
 
 def mache_zu_admin(email):
-    """Vergibt Administratorrechte an eine vorhandene E-Mail-Adresse."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('UPDATE benutzer SET rolle = "admin" WHERE email = ?', (email,))
-
-    if cursor.rowcount > 0:
-        print(f"Rechte aktualisiert: {email} ist jetzt Administrator.")
-    else:
-        print(f"Fehler: kein benutzer mit der E-Mail {email} gefunden.")
-
     conn.commit()
     conn.close()
 
-# --- Programmstart ---
 if __name__ == "__main__":
-    # 1. Datenbank sicherheitshalber initialisieren
     init_db()
-    
-    # --- FALL 1: Max zum Admin machen ---
-    # Da Max laut deinem vorherigen Code schon existiert, nutzen wir die Update-Funktion
-    mache_zu_admin("max@kochen.de")
-    
-    # --- FALL 2: "Admin Chef" als User anlegen ---
-    # Auch wenn der Name "Admin" enthält, legen wir ihn hier explizit mit der Rolle "user" an
-    success, msg = benutzer_anlegen("Admin Chef", "chef@firma.de", "geheim123", rolle="user")
-    print(msg)
-    
-    # Kontrolle: Alle Nutzer ausgeben, um zu sehen ob es geklappt hat
-    print("\nAktuelle Benutzerliste:")
-    for u in get_all_users():
-        print(f"ID: {u['id']} | Name: {u['name']} | Rolle: {u['rolle']}")
-    
-    benutzer_anlegen("max Mustermann", "max@kochen.de", "superSicher123")
-    mache_zu_admin("max@kochen.de")
-    benutzer_anlegen("Admin Chef", "chef@firma.de", "geheim123", rolle="admin")

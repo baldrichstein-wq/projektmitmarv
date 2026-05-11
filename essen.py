@@ -1,6 +1,5 @@
 import sqlite3
 import json
-table_name = 'essen'
 DB_FILE = 'essen.db'
 
 PREDEFINED_Essen = {
@@ -44,12 +43,12 @@ def init_db():
                 json.dumps(PREDEFINED_Essen['Zutaten']),
                 PREDEFINED_Essen['description'],
                 PREDEFINED_Essen['kochanweisung'],
-                PREDEFINED_Essen['Kochzeit'],
+                PREDEFINED_Essen['Kochzeit']
             ))
             conn.commit()
 
 
-def add_essen(name, ingredients, description, cooking_instructions, cooking_time):
+def add_essen(name, Zutaten, description, kochanweisung, Kochzeit):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute('''
@@ -57,10 +56,10 @@ def add_essen(name, ingredients, description, cooking_instructions, cooking_time
             VALUES (?, ?, ?, ?, ?)
         ''', (
             name,
-            json.dumps(ingredients),
+            json.dumps(Zutaten),
             description,
-            cooking_instructions,
-            cooking_time,
+            kochanweisung,
+            Kochzeit
         ))
         conn.commit()
         return cursor.lastrowid
@@ -72,9 +71,9 @@ def get_all_essen():
     cursor.execute('SELECT id, name, Zutaten, description, kochanweisung, Kochzeit FROM essen ORDER BY id')
     rows = cursor.fetchall()
     conn.close()
-    essen_list = []
+    essen= []
     for row in rows:
-        essen_list.append({
+        essen.append({
             'id': row[0],
             'name': row[1],
             'ingredients': json.loads(row[2]),
@@ -82,7 +81,7 @@ def get_all_essen():
             'kochanweisung': row[4],
             'Kochzeit': row[5]
         })
-    return essen_list
+    return essen
 
 
 def delete_essen(essen_id):
@@ -106,6 +105,6 @@ def get_essen(essen_id):
             'ingredients': json.loads(row[2]),
             'description': row[3],
             'kochanweisung': row[4],
-            'Kochzeit': row[5],
+            'Kochzeit': row[5]
         }
     return None

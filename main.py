@@ -5,7 +5,9 @@ import wine
 import essen
 
 app = Flask(__name__, template_folder='templates')
+# Der Secret Key ist zwingend notwendig, damit Sessions sicher verschlüsselt werden können!
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
+
 
 # Initialisiere Datenbanken beim Start
 benutzer.init_db()
@@ -14,8 +16,9 @@ essen.init_db()
 
 @app.route('/')
 def home():
-    user = session.get('user')
-    user_name = user['name'] if user else 'Besucher'
+    # Wir lesen den Namen nun aus der Flask-Session aus.
+    # Ist niemand angemeldet, wird standardmäßig 'Besucher' verwendet.
+    user_name = session.get('user_name', 'Besucher')
     return render_template('index.html', name=user_name)
 
 @app.route('/ueber-uns')
@@ -50,8 +53,14 @@ def anmeldung():
             flash('Bitte füllen Sie alle Felder aus.', 'danger')
             return redirect(url_for('anmeldung'))
 
+        # user sollte im besten Fall ein Dictionary aus der DB zurückgeben
         user = benutzer.benutzer_anmelden(email, password)
         if user:
+            # Speichere die E-Mail (und ggf. den Namen) sicher in der nutzerspezifischen Flask-Session
+            session['user_email'] = email
+            # Falls dein Modul den Namen zurückgibt, setze ihn hier. Behelfsmäßig nehmen wir hier die E-Mail:
+            session['user_name'] = email 
+            
             flash('Erfolgreich angemeldet.', 'success')
             return redirect(url_for('home'))
         else:
@@ -61,7 +70,16 @@ def anmeldung():
 
 @app.route('/abmeldung')
 def abmeldung():
-    benutzer.benutzer_abmelden()
+    # Lösche den Nutzer aus der Flask-Session des aktuellen Browsers
+    session.pop('user_email', None)
+    session.pop('user_name', None)
+    
+    # Falls das benutzer-Modul noch interne Logiken hat:
+    try:
+        benutzer.benutzer_abmelden()
+    except AttributeError:
+        pass # Ignorieren, falls die Funktion nicht existiert
+
     flash('Erfolgreich abgemeldet.', 'success')
     return redirect(url_for('home'))
 
@@ -115,31 +133,31 @@ def verwalte_essen():
         name = request.form.get('name', '').strip()
         ingredients = request.form.get('ingredients', '').strip()
         description = request.form.get('description', '').strip()
-        Zubereitung = request.form.get('zubereitung', '').strip()
-        Kochzeit = request.form.get('Kochzeit', '').strip()
+        zubereitung = request.form.get('zubereitung', '').strip()
+        kochzeit = request.form.get('Kochzeit', '').strip()
 
+        # NEU: Validierung eingefügt, damit keine leeren Einträge in die DB kommen
         if not name or not ingredients or not description:
             flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
             return redirect(url_for('verwalte_essen'))
 
         try:
-            Kochzeit_int = int(Kochzeit) if Kochzeit else 0
+            kochzeit_int = int(kochzeit) if kochzeit else 0
+            essen.add_essen(
+                name=name,
+                zutaten=[i.strip() for i in ingredients.split(',') if i.strip()],
+                description=description,
+                kochanweisung=zubereitung, 
+                kochzeit=kochzeit_int      
+            )
+            flash(f"Essen '{name}' gespeichert.", 'success')
         except ValueError:
-            flash('Kochzeit muss eine Zahl sein.', 'danger')
-            return redirect(url_for('verwalte_essen'))
-
-        essen.add_essen(
-            name=name,
-            ingredients=[item.strip() for item in ingredients.split(',') if item.strip()],
-            description=description,
-            cooking_instructions=Zubereitung,
-            cooking_time=Kochzeit_int,
-        )
-        flash(f"Essen '{name}' wurde gespeichert.", 'success')
+            flash('Fehler bei den Eingabedaten. Kochzeit muss eine Zahl sein.', 'danger')
+        
         return redirect(url_for('verwalte_essen'))
 
-    liste_essen = essen.get_all_essen()
-    return render_template('essen.html', essen=liste_essen)
+    speisen_liste = essen.get_all_essen()
+    return render_template('essen.html', essen=speisen_liste)
 
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
@@ -149,6 +167,24 @@ def loesche_essen(essen_id):
     else:
         flash('Essen nicht gefunden.', 'danger')
     return redirect(url_for('verwalte_essen'))
+
+@app.route('/suche')
+def suche():
+    query = request.args.get('q', '').strip().lower()
+    ergebnisse_wein = []
+    ergebnisse_essen = []
+
+    if query:
+        # Suche in Weinen
+        alle_weine = wine.get_all_wines()
+        ergebnisse_wein = [w for w in alle_weine if query in w['name'].lower() or query in w['description'].lower()]
+        
+        # Suche in Essen
+        alle_speisen = essen.get_all_essen()
+        ergebnisse_essen = [e for e in alle_speisen if query in e['name'].lower() or query in e['description'].lower()]
+
+    # KORREKTUR: Typo in Template-Name korrigiert ('suche.html' statt 'such.html')
+    return render_template('suche.html', query=query, weine=ergebnisse_wein, speisen=ergebnisse_essen)
 
 if __name__ == '__main__':
     app.run(debug=True)
