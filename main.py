@@ -7,15 +7,30 @@ import essen
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
 
+
 # Initialisiere Datenbanken beim Start
 benutzer.init_db()
 wine.init_db()
+essen.init_db()
 
 @app.route('/')
 def home():
-    user = session.get('user')
-    user_name = user['name'] if user else 'Besucher'
-    return render_template('index.html', name=user_name)
+    # Da keine Session mehr da ist, standardmäßig 'Besucher'
+    return render_template('index.html', name='Besucher')
+
+@app.route('/anmeldung', methods=['GET', 'POST'])
+def anmeldung():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        user = benutzer.nutzer_anmeldung(email, password)
+        if user:
+            flash(f'Willkommen {user["name"]}! (Anmeldung erfolgreich)', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Ungültige Anmeldedaten.', 'danger')
+    return render_template('anmeldung.html')
 
 @app.route('/ueber-uns')
 def ueber_uns():
@@ -114,31 +129,27 @@ def verwalte_essen():
         name = request.form.get('name', '').strip()
         ingredients = request.form.get('ingredients', '').strip()
         description = request.form.get('description', '').strip()
-        Zubereitung = request.form.get('zubereitung', '').strip()
-        Kochzeit = request.form.get('Kochzeit', '').strip()
-
-        if not name or not ingredients or not description:
-            flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
-            return redirect(url_for('verwalte_essen'))
+        zubereitung = request.form.get('zubereitung', '').strip()
+        kochzeit = request.form.get('Kochzeit', '').strip()
 
         try:
-            Kochzeit_int = int(Kochzeit) if Kochzeit else 0
+            kochzeit_int = int(kochzeit) if kochzeit else 0
+            essen.add_essen(
+                name=name,
+                zutaten=[i.strip() for i in ingredients.split(',') if i.strip()],
+                description=description,
+                kochanweisung=zubereitung, # Parametername korrigiert
+                kochzeit=kochzeit_int      # Parametername korrigiert
+            )
+            flash(f"Essen '{name}' gespeichert.", 'success')
         except ValueError:
-            flash('Kochzeit muss eine Zahl sein.', 'danger')
-            return redirect(url_for('verwalte_essen'))
-
-        essen.add_essen(
-            name=name,
-            ingredients=[item.strip() for item in ingredients.split(',') if item.strip()],
-            description=description,
-            cooking_instructions=Zubereitung,
-            cooking_time=Kochzeit_int,
-        )
-        flash(f"Essen '{name}' wurde gespeichert.", 'success')
+            flash('Fehler bei den Eingabedaten.', 'danger')
+        
         return redirect(url_for('verwalte_essen'))
 
-    essen = essen.get_all_essen()
-    return render_template('essen.html', essen=essen)
+    # Variable 'speisen_liste' statt 'essen', um Modul-Konflikt zu vermeiden
+    speisen_liste = essen.get_all_essen()
+    return render_template('essen.html', essen=speisen_liste)
 
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
