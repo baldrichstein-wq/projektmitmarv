@@ -4,60 +4,161 @@
     <meta charset="UTF-8">
     <title>Suche - Wein & Essen</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
+            background-attachment: fixed;
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-color: #f4e3d7; 
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            color: #FDFD96; 
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+            font-family: "Times New Roman", Times, serif;  
+        }
+        .list-group-item {
+            color: #212529;
+            text-shadow: none;
+        }
+        .calculator-box {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: none; /* Initial versteckt */
+        }
+    </style>
 </head>
-<body class="container mt-5">
-
-    <h2>In der Datenbank suchen</h2>
-    
-    <form action="{{ url_for('suche') }}" method="get" class="mb-5">
-        <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Nach Wein oder Essen suchen..." value="{{ query }}">
-            <button class="btn btn-primary" type="submit">Suchen</button>
-        </div>
-    </form>
-
-    {% if query %}
-        <h3>Suchergebnisse für "{{ query }}"</h3>
-        <hr>
-
-        <div class="row">
-            <div class="col-md-6">
-                <h4>Weine</h4>
-                {% if weine %}
-                    <ul class="list-group">
-                    {% for w in weine %}
-                        <li class="list-group-item">
-                            <strong>{{ w.name }}</strong><br>
-                            <small>{{ w.description[:100] }}...</small>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="text-muted">Keine Weine gefunden.</p>
-                {% endif %}
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('home') }}">Das Rezeptbuch</a>
             </div>
+    </nav>
 
-            <div class="col-md-6">
-                <h4>Speisen</h4>
-                {% if speisen %}
-                    <ul class="list-group">
-                    {% for e in speisen %}
-                        <li class="list-group-item">
-                            <strong>{{ e.name }}</strong><br>
-                            <small>{{ e.description[:100] }}...</small>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="text-muted">Keine Speisen gefunden.</p>
-                {% endif %}
+    <div class="container mt-4">
+        <h2>In der Datenbank suchen</h2>
+        
+        <form action="{{ url_for('suche') }}" method="get" class="mb-5">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="Nach Wein oder Essen suchen..." value="{{ query }}">
+                <button class="btn btn-primary" type="submit">Suchen</button>
             </div>
-        </div>
-    {% endif %}
+        </form>
 
-    <div class="mt-4">
-        <a href="{{ url_for('home') }}" class="btn btn-secondary">Zurück zum Start</a>
+        {% if query %}
+            <h3>Suchergebnisse für "{{ query }}"</h3>
+            <hr>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Weine</h4>
+                    {% if weine %}
+                        <div class="list-group">
+                        {% for w in weine %}
+                            <div class="list-group-item">
+                                <strong>{{ w.name }}</strong>
+                                <p><small>{{ w.description[:100] }}...</small></p>
+                                
+                                <button class="btn btn-sm btn-outline-success" onclick="toggleCalc('wine-{{ w.id }}')">
+                                    Menge berechnen (Basis: 5L)
+                                </button>
+
+                                <div id="wine-{{ w.id }}" class="calculator-box">
+                                    <label>Zielmenge in Litern:</label>
+                                    <input type="number" step="0.5" value="5" class="form-control mb-2" 
+                                           oninput="calculate(this, 5, 'ingredients-w-{{ w.id }}')">
+                                    <h6>Zutaten:</h6>
+                                    <ul id="ingredients-w-{{ w.id }}">
+                                        {% for zutat in w.ingredients %}
+                                            <li data-base-text="{{ zutat }}">{{ zutat }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Keine Weine gefunden.</p>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <h4>Speisen</h4>
+                    {% if speisen %}
+                        <div class="list-group">
+                        {% for e in speisen %}
+                            <div class="list-group-item">
+                                <strong>{{ e.name }}</strong>
+                                <p><small>{{ e.description[:100] }}...</small></p>
+
+                                <button class="btn btn-sm btn-outline-primary" onclick="toggleCalc('food-{{ e.id }}')">
+                                    Portionen berechnen (Basis: {{ e.personenanzahl }})
+                                </button>
+
+                                <div id="food-{{ e.id }}" class="calculator-box">
+                                    <label>Anzahl Personen:</label>
+                                    <input type="number" step="1" value="{{ e.personenanzahl }}" class="form-control mb-2" 
+                                           oninput="calculate(this, {{ e.personenanzahl }}, 'ingredients-f-{{ e.id }}')">
+                                    <h6>Zutaten:</h6>
+                                    <ul id="ingredients-f-{{ e.id }}">
+                                        {% for zutat in e.ingredients %}
+                                            <li data-base-text="{{ zutat }}">{{ zutat }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Keine Speisen gefunden.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="mt-4">
+            <a href="{{ url_for('home') }}" class="btn btn-secondary">Zurück zum Start</a>
+        </div>
     </div>
 
+    <script>
+        // Zeigt oder versteckt den Rechner-Bereich
+        function toggleCalc(id) {
+            const el = document.getElementById(id);
+            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        }
+
+        // Führt die Skalierung im Browser durch
+        function calculate(inputField, baseValue, listId) {
+            const targetValue = parseFloat(inputField.value);
+            if (!targetValue || targetValue <= 0) return;
+
+            const factor = targetValue / baseValue;
+            const listItems = document.querySelectorAll(`#${listId} li`);
+
+            listItems.forEach(item => {
+                const originalText = item.getAttribute('data-base-text');
+                
+                // Regex sucht nach Zahlen am Anfang (z.B. "500 g Mehl" oder "1.5 Liter Wasser")
+                const match = originalText.match(/^(\d+([.,]\d+)?)(.*)/);
+                
+                if (match) {
+                    const amount = parseFloat(match[1].replace(',', '.'));
+                    const rest = match[3];
+                    const newAmount = (amount * factor).toFixed(2).replace('.', ',');
+                    // .rstrip Nullen simulieren:
+                    const cleanAmount = newAmount.replace(/,00$/, '').replace(/(,\d)0$/, '$1');
+                    item.innerText = cleanAmount + rest;
+                }
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
