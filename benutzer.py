@@ -1,5 +1,7 @@
 import sqlite3
 from flask import session
+# Werkzeug nutzt standardmäßig sichere Algorithmen wie Scrypt oder PBKDF2
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_FILE = 'benutzer.db'
 
@@ -12,10 +14,13 @@ RECHTE_PRO_ROLLE = {
 
 def normalize_rolle(rolle):
     """Vereinheitlicht alte und neue Rollennamen."""
-    if rolle == 'user' or rolle == 'Benutzer':
+    if not rolle:
+        return 'gast'
+    rolle_clean = str(rolle).strip().lower()
+    if rolle_clean in ['user', 'benutzer']:
         return 'benutzer'
-    if rolle in RECHTE_PRO_ROLLE:
-        return rolle
+    if rolle_clean in RECHTE_PRO_ROLLE:
+        return rolle_clean
     return 'gast'
 
 def rechte_fuer_rolle(rolle):
@@ -35,7 +40,7 @@ def ist_admin(user):
     return user is not None and normalize_rolle(user.get('rolle')) == 'admin'
 
 def init_db():
-    """Erstellt die Datenbank und Beispiel-Logins."""
+    """Erstellt die Datenbank und Beispiel-Logins mit Password-Hashing."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     
@@ -56,39 +61,48 @@ def init_db():
 
     cursor.execute('SELECT COUNT(*) FROM benutzer')
     if cursor.fetchone()[0] == 0:
+        # Passwörter werden vor dem Einfügen unumkehrbar gehasht
+        admin_hash = generate_password_hash('admin123')
+        benutzer_hash = generate_password_hash('benutzer123')
+        
         cursor.executemany('''
             INSERT INTO benutzer (name, email, password, rolle)
             VALUES (?, ?, ?, ?)
         ''', [
-            ('Admin', 'admin@rezepte.de', 'admin123', 'admin'),
-            ('Benutzer', 'benutzer@rezepte.de', 'benutzer123', 'benutzer')
+            ('Admin', 'admin@rezepte.de', admin_hash, 'admin'),
+            ('Benutzer', 'benutzer@rezepte.de', benutzer_hash, 'benutzer')
         ])
     
     conn.commit()
     conn.close()
 
 def benutzer_anmelden(email, passwort):
-    """Überprüft die Anmeldedaten eines Benutzers."""
+    """Überprüft die Anmeldedaten mithilfe von Hash-Vergleich."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, email, rolle FROM benutzer WHERE email = ? AND password = ?', (email, passwort))
+    # Nur anhand der E-Mail suchen, da der Passwort-String in der DB ein Hash ist
+    cursor.execute('SELECT id, name, email, password, rolle FROM benutzer WHERE email = ?', (email,))
     user = cursor.fetchone()
     conn.close()
     
-    if user:
+    # check_password_hash vergleicht das Klartext-Passwort mit dem gespeicherten Hash
+    if user and check_password_hash(user[3], passwort):
         return {
             'id': user[0],
             'name': user[1],
             'email': user[2],
-            'rolle': normalize_rolle(user[3]) 
+            'rolle': normalize_rolle(user[4]) 
         }
     return None
 
 def benutzer_anlegen(name, email, passwort, rolle="benutzer"):
-    """Fügt einen neuen Benutzer hinzu."""
+    """Fügt einen neuen Benutzer mit gehashtem Passwort hinzu."""
     rolle = normalize_rolle(rolle)
     if rolle == 'gast':
         rolle = 'benutzer'
+        
+    # Klartext-Passwort in einen sicheren, gesalzenen Hash umwandeln
+    hashed_password = generate_password_hash(passwort)
         
     try:
         conn = sqlite3.connect(DB_FILE)
@@ -96,7 +110,7 @@ def benutzer_anlegen(name, email, passwort, rolle="benutzer"):
         cursor.execute("""
             INSERT INTO benutzer (name, email, password, rolle)
             VALUES (?, ?, ?, ?)
-        """, (name, email, passwort, rolle))
+        """, (name, email, hashed_password, rolle))
         conn.commit()
         return True, f"Benutzer {name} als '{rolle}' erfolgreich angelegt!"
     except sqlite3.IntegrityError:
