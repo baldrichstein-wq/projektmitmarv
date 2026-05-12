@@ -114,15 +114,16 @@ def get_essen(essen_id):
             'Kochzeit': row[6]
         }
     return None
-def update_essen(essen_id, name, Zutaten, description, kochanweisung, Kochzeit):
+def update_essen(essen_id, name, personenanzahl, Zutaten, description, kochanweisung, Kochzeit):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE essen
-            SET name = ?, Zutaten = ?, description = ?, kochanweisung = ?, Kochzeit = ?
+            SET name = ?, personenanzahl = ?, Zutaten = ?, description = ?, kochanweisung = ?, Kochzeit = ?
             WHERE id = ?
         ''', (
             name,
+            personenanzahl,
             json.dumps(Zutaten),
             description,
             kochanweisung,
