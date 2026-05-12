@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rezepteverwaltung</title>
+    <title>Wein bearbeiten</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-        <style>
+    <style>
         body {
             /* Pfad zum Bild */
-           background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
+            background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
     
             /* Bild fixieren (scrollt nicht mit) */
             background-attachment: fixed;
@@ -44,24 +44,25 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="{{ url_for('home') }}">Startseite</a>
+                        <a class="nav-link" href="{{ url_for('home') }}">Startseite</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('ueber_uns') }}">Über uns</a>
                     </li>
+                    
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('verwalte_wein') }}">Wein</a>
                     </li>
-                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a>
-                    </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a>
+                                            <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('suche') }}">Suche</a>
+                    </li>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
@@ -81,7 +82,7 @@
     </nav>
 
     <div class="container mt-5">
-        <h1>Rezepteverwaltung</h1>
+        <h1>Rezept bearbeiten</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -90,70 +91,37 @@
             {% endif %}
         {% endwith %}
 
-        <div class="row">
-            <div class="col-md-6">
-                <h2>Neues Rezept hinzufügen</h2>
-                <form method="post">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="personenanzahl" class="form-label">Personenanzahl</label>
-                        <input type="number" class="form-control" id="personenanzahl" name="personenanzahl" min="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="ingredients" class="form-label">Zutaten (kommagetrennt)</label>
-                        <textarea class="form-control" id="ingredients" name="ingredients" rows="3" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Beschreibung</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="cooking_instructions" class="form-label">Zubereitung</label>
-                        <textarea class="form-control" id="cooking_instructions" name="cooking_instructions" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="kochzeit" class="form-label">Kochzeit (Stunden)</label>
-                            <input type="number" class="form-control" id="kochzeit" name="kochzeit" min="0">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Speichern</button>
-                </form>
+        <form method="post">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ essen.name }}" required>
             </div>
-            <div class="col-md-6">
-                <h2>Gespeicherte Rezepte</h2>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Kochzeit</th>
-                            <th>Aktion</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for essen in essens %}
-                        <tr>
-                            <td>{{ essen.id }}</td>
-                            <td>{{ essen.name }}</td>
-                            <td>{{ essen.Kochzeit }} Stunden</td>
-                            <td>{{ essen.kochzeit }} Stunden</td>
-                            <td>
-                                <form method="post" action="{{ url_for('loesche_essen', essen_id=essen.id) }}" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        <div class="mb-3">
+                <label for="personenanzahl" class="form-label">Personenanzahl</label>
+                <input type="number" class="form-control" id="personenanzahl" name="personenanzahl" value="{{ essen.personenanzahl }}" required>
             </div>
-        </div>
+            <div class="mb-3">
+                <label for="ingredients" class="form-label">Zutaten (kommagetrennt)</label>
+                <textarea class="form-control" id="ingredients" name="ingredients" rows="3" required>{{ essen.ingredients | join(', ') }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Beschreibung</label>
+                <textarea class="form-control" id="description" name="description" rows="3" required>{{ essen.description }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label for="cooking_instructions" class="form-label">Zubereitung</label>
+                <textarea class="form-control" id="cooking_instructions" name="cooking_instructions" rows="3"></textarea>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="kochzeit" class="form-label">Kochzeit (Stunden)</label>
+                    <input type="number" class="form-control" id="kochzeit" name="kochzeit" min="0">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Aktualisieren</button>
+            <a href="{{ url_for('verwalte_essen') }}" class="btn btn-secondary ms-2">Abbrechen</a>
+        </form>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>
