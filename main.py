@@ -42,18 +42,18 @@ essen.init_db()
 @app.route('/')
 def home():
     # Rolle aus Session holen, Standard ist 'besucher'
-    role = session.get('user_role', 'besucher')
-    name = session.get('user_name', 'Gast')
+    role = session.get('user_role', 'gast')
+    name = session.get('user_name', 'gast')
     return render_template('index.html', name=name, role=role)
 
 @app.route('/ueber-uns')
 def ueber_uns():
-    role = session.get('user_role', 'besucher')
+    role = session.get('user_role', 'gast')
     return render_template('ueber-uns.html', role=role)
 
 @app.route('/benutzer', methods=['GET', 'POST'])
 def verwalte_benutzer():
-    role = session.get('user_role', 'besucher')
+    role = session.get('user_role', 'gast')
     if role != 'admin':
         flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer verwalten.', 'danger')
         return redirect(url_for('home'))
@@ -80,13 +80,13 @@ def anmeldung():
         if user:
             session['user_email'] = email
             session['user_name'] = user.get('name', email)
-            session['user_role'] = user.get('rolle', 'besucher')
+            session['user_role'] = user.get('rolle', 'gast')
             flash(f"Willkommen {session['user_name']}!", 'success')
             return redirect(url_for('home'))
         else:
             flash('Ungültige Anmeldedaten.', 'danger')
 
-    return render_template('anmeldung.html', role=session.get('user_role', 'besucher'))
+    return render_template('anmeldung.html', role=session.get('user_role', 'gast'))
 
 @app.route('/abmeldung')
 def abmeldung():
@@ -113,12 +113,12 @@ def registrierung():
         else:
             flash(message, 'danger')
 
-    return render_template('registrierung.html', role=session.get('user_role', 'besucher'))
+    return render_template('registrierung.html', role=session.get('user_role', 'gast'))
 
 @app.route('/wein', methods=['GET', 'POST'])
 def verwalte_wein():
-    role = session.get('user_role', 'besucher')
-    if role == 'besucher':
+    role = session.get('user_role', 'gast')
+    if role == 'gast':
         flash('Bitte melde dich an, um Weine zu sehen.', 'danger')
         return redirect(url_for('anmeldung'))
 
@@ -139,8 +139,8 @@ def verwalte_wein():
 
 @app.route('/essen', methods=['GET', 'POST'])
 def verwalte_essen():
-    role = session.get('user_role', 'besucher')
-    if role == 'besucher':
+    role = session.get('user_role', 'gast')
+    if role == 'gast':
         flash('Bitte melden Sie sich an.', 'danger')
         return redirect(url_for('anmeldung'))
 
@@ -156,7 +156,7 @@ def verwalte_essen():
 
 @app.route('/suche')
 def suche():
-    role = session.get('user_role', 'besucher')
+    role = session.get('user_role', 'gast')
     query = request.args.get('q', '').strip().lower()
     # ... (Suchlogik wie gehabt)
     return render_template('suche.html', query=query, weine=[], speisen=[], role=role)
