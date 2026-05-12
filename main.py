@@ -5,28 +5,31 @@ import wine
 import essen
 
 app = Flask(__name__, template_folder='templates')
-# Der Secret Key ist zwingend notwendig, damit Sessions sicher verschlüsselt werden können!
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'supersecretkey123')
+app.secret_key = 'supersecretkey123'  # Bleibt für flash() notwendig
 
-
-# Initialisiere Datenbanken beim Start
+# Initialisiere Datenbanken
 benutzer.init_db()
 wine.init_db()
 essen.init_db()
 
 @app.route('/')
 def home():
-    # Wir lesen den Namen nun aus der Flask-Session aus.
-    # Ist niemand angemeldet, wird standardmäßig 'Besucher' verwendet.
-    user_name = session.get('user_name', 'Besucher')
-    return render_template('index.html', name=user_name)
+    role = request.args.get('role', session.get('user_role', 'besucher'))
+    name = session.get('user_name', role)
+    return render_template('index.html', name=name, role=role)
 
 @app.route('/ueber-uns')
 def ueber_uns():
-    return render_template('ueber-uns.html')
+    role = request.args.get('role', session.get('user_role', 'besucher'))
+    return render_template('ueber-uns.html', role=role)
 
 @app.route('/benutzer', methods=['GET', 'POST'])
 def verwalte_benutzer():
+    role = request.args.get('role', session.get('user_role', 'besucher'))
+    if role != 'admin':
+        flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer verwalten.', 'danger')
+        return redirect(url_for('home', role=role))
+
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip()
@@ -34,158 +37,161 @@ def verwalte_benutzer():
 
         if not name or not email or not password:
             flash('Bitte füllen Sie alle Felder aus.', 'danger')
-            return redirect(url_for('verwalte_benutzer'))
+            return redirect(url_for('verwalte_benutzer', role=role))
 
         success, message = benutzer.benutzer_anlegen(name, email, password)
         flash(message, 'success' if success else 'danger')
-        return redirect(url_for('verwalte_benutzer'))
+        return redirect(url_for('verwalte_benutzer', role=role))
 
     users = benutzer.get_all_users()
-    return render_template('benutzer.html', users=users)
+    return render_template('benutzer.html', users=users, role=role)
 
 @app.route('/anmeldung', methods=['GET', 'POST'])
 def anmeldung():
+    role = request.args.get('role', session.get('user_role', 'besucher'))
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
 
         if not email or not password:
             flash('Bitte füllen Sie alle Felder aus.', 'danger')
-            return redirect(url_for('anmeldung'))
+            return redirect(url_for('anmeldung', role=role))
 
-        # user sollte im besten Fall ein Dictionary aus der DB zurückgeben
         user = benutzer.benutzer_anmelden(email, password)
         if user:
-            # Speichere die E-Mail (und ggf. den Namen) sicher in der nutzerspezifischen Flask-Session
             session['user_email'] = email
-            # Falls dein Modul den Namen zurückgibt, setze ihn hier. Behelfsmäßig nehmen wir hier die E-Mail:
-            session['user_name'] = email 
-            
-            flash('Erfolgreich angemeldet.', 'success')
-            return redirect(url_for('home'))
+            session['user_name'] = user.get('name', email)
+            session['user_role'] = user.get('rolle', 'besucher')
+            flash(f"Willkommen {session['user_name']}!", 'success')
+            return redirect(url_for('home', role=session['user_role']))
         else:
             flash('Ungültige Anmeldedaten.', 'danger')
 
-    return render_template('anmeldung.html')
+    return render_template('anmeldung.html', role=role)
 
 @app.route('/abmeldung')
 def abmeldung():
-    # Lösche den Nutzer aus der Flask-Session des aktuellen Browsers
     session.pop('user_email', None)
     session.pop('user_name', None)
-    
-    # Falls das benutzer-Modul noch interne Logiken hat:
+    session.pop('user_role', None)
+
     try:
         benutzer.benutzer_abmelden()
     except AttributeError:
-        pass # Ignorieren, falls die Funktion nicht existiert
+        pass
 
     flash('Erfolgreich abgemeldet.', 'success')
     return redirect(url_for('home'))
 
 @app.route('/wein', methods=['GET', 'POST'])
 def verwalte_wein():
+    # 1. Rolle sofort prüfen
+    role = request.args.get('role', 'besucher')
+
+    # 2. Sicherheits-Check: Besucher komplett aussperren
+    if role == 'besucher':
+        flash('Zugriff verweigert: Bitte melde dich an, um Weine zu verwalten.', 'danger')
+        return redirect(url_for('home', role=role))
+
+    # 3. Erst nach dem Check die POST-Logik (Erstellen) erlauben
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        ingredients = request.form.get('ingredients', '').strip()
-        description = request.form.get('description', '').strip()
-        brewing_instructions = request.form.get('brewing_instructions', '').strip()
-        brewing_time = request.form.get('brewing_time', '').strip()
-        alcohol_content = request.form.get('alcohol_content', '').strip()
+        name = request.form.get('name')
+        ingredients = request.form.getlist('ingredients')
+        description = request.form.get('description')
+        instructions = request.form.get('brewing_instructions')
+        time = request.form.get('brewing_time')
+        alcohol = request.form.get('alcohol_content')
 
-        if not name or not ingredients or not description:
-            flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
-            return redirect(url_for('verwalte_wein'))
+        # Wein hinzufügen (aus wine.py)
+        wine.add_wine(name, ingredients, description, instructions, time, alcohol)
 
-        try:
-            brewing_time_int = int(brewing_time) if brewing_time else 0
-            alcohol_float = float(alcohol_content) if alcohol_content else 0.0
-        except ValueError:
-            flash('Gärzeit muss eine Zahl und Alkoholgehalt eine Dezimalzahl sein.', 'danger')
-            return redirect(url_for('verwalte_wein'))
+        flash(f'Wein "{name}" erfolgreich hinzugefügt!', 'success')
+        return redirect(url_for('verwalte_wein', role=role))
 
-        wine.add_wine(
-            name=name,
-            ingredients=[item.strip() for item in ingredients.split(',') if item.strip()],
-            description=description,
-            brewing_instructions=brewing_instructions,
-            brewing_time=brewing_time_int,
-            alcohol_content=alcohol_float,
-        )
-        flash(f"Wein '{name}' wurde gespeichert.", 'success')
-        return redirect(url_for('verwalte_wein'))
-
-    wines = wine.get_all_wines()
-    return render_template('wein.html', wines=wines)
+    # GET-Teil: Liste anzeigen
+    weine = wine.get_all_wines()
+    return render_template('wein.html', wines=weine, role=role)
 
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
 def loesche_wein(wine_id):
-    deleted = wine.delete_wine(wine_id)
-    if deleted:
-        flash('Wein erfolgreich gelöscht.', 'success')
-    else:
-        flash('Wein nicht gefunden.', 'danger')
-    return redirect(url_for('verwalte_wein'))
+    role = request.args.get('role', 'besucher')
+
+    # STRENGER CHECK: Nur Admin darf löschen
+    if role != 'admin':
+        flash('Fehler: Nur Administratoren dürfen Einträge löschen!', 'danger')
+        return redirect(url_for('verwalte_wein', role=role))
+
+    wine.delete_wine(wine_id)
+    flash('Wein gelöscht.', 'success')
+    return redirect(url_for('verwalte_wein', role=role))
 
 @app.route('/essen', methods=['GET', 'POST'])
 def verwalte_essen():
+    role = request.args.get('role', session.get('user_role', 'besucher'))
+    if role == 'besucher':
+        flash('Bitte melden Sie sich an, um Rezepte zu verwalten.', 'danger')
+        return redirect(url_for('home', role=role))
+
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         personenanzahl = request.form.get('personenanzahl', '').strip()
         ingredients = request.form.get('ingredients', '').strip()
         description = request.form.get('description', '').strip()
         zubereitung = request.form.get('zubereitung', '').strip()
-        kochzeit = request.form.get('Kochzeit', '').strip()
-        # NEU: Validierung eingefügt, damit keine leeren Einträge in die DB kommen
+        kochzeit = request.form.get('kochzeit', '').strip()
+
         if not name or not ingredients or not description:
             flash('Bitte füllen Sie mindestens Name, Zutaten und Beschreibung aus.', 'danger')
-            return redirect(url_for('verwalte_essen'))
+            return redirect(url_for('verwalte_essen', role=role))
 
         try:
             kochzeit_int = int(kochzeit) if kochzeit else 0
             essen.add_essen(
                 name=name,
-                personenanzahl=request.form.get('personenanzahl', '').strip(),
+                personenanzahl=personenanzahl,
                 zutaten=[i.strip() for i in ingredients.split(',') if i.strip()],
                 description=description,
-                kochanweisung=zubereitung, 
-                kochzeit=kochzeit_int      
+                kochanweisung=zubereitung,
+                kochzeit=kochzeit_int,
             )
-            flash(f"Essen '{name}' gespeichert.", 'success')
+            flash('Essen gespeichert.', 'success')
         except ValueError:
             flash('Fehler bei den Eingabedaten. Kochzeit muss eine Zahl sein.', 'danger')
-        
-        return redirect(url_for('verwalte_essen'))
+
+        return redirect(url_for('verwalte_essen', role=role))
 
     speisen_liste = essen.get_all_essen()
-    return render_template('essen.html', essen=speisen_liste)
+    return render_template('essen.html', essen=speisen_liste, role=role)
 
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
+    role = request.args.get('role', session.get('user_role', 'besucher'))
+    if role != 'admin':
+        flash('Nur Administratoren können Rezepte löschen.', 'danger')
+        return redirect(url_for('verwalte_essen', role=role))
+
     deleted = essen.delete_essen(essen_id)
     if deleted:
-        flash('Essen erfolgreich gelöscht.', 'success')
+        flash('Erfolgreich gelöscht.', 'success')
     else:
         flash('Essen nicht gefunden.', 'danger')
-    return redirect(url_for('verwalte_essen'))
+    return redirect(url_for('verwalte_essen', role=role))
 
 @app.route('/suche')
 def suche():
+    role = request.args.get('role', session.get('user_role', 'besucher'))
     query = request.args.get('q', '').strip().lower()
     ergebnisse_wein = []
     ergebnisse_essen = []
 
     if query:
-        # Suche in Weinen
         alle_weine = wine.get_all_wines()
-        ergebnisse_wein = [w for w in alle_weine if query in w['name'].lower() or query in w['description'].lower()]
-        
-        # Suche in Essen
-        alle_speisen = essen.get_all_essen()
-        ergebnisse_essen = [e for e in alle_speisen if query in e['name'].lower() or query in e['description'].lower()]
+        ergebnisse_wein = [w for w in alle_weine if query in w.get('name', '').lower() or query in w.get('description', '').lower()]
 
-    # KORREKTUR: Typo in Template-Name korrigiert ('suche.html' statt 'such.html')
-    return render_template('suche.html', query=query, weine=ergebnisse_wein, speisen=ergebnisse_essen)
+        alle_speisen = essen.get_all_essen()
+        ergebnisse_essen = [e for e in alle_speisen if query in e.get('name', '').lower() or query in e.get('description', '').lower()]
+
+    return render_template('suche.html', query=query, weine=ergebnisse_wein, speisen=ergebnisse_essen, role=role)
 
 if __name__ == '__main__':
     app.run(debug=True)

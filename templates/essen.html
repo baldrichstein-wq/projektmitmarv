@@ -120,7 +120,11 @@
                             <input type="number" class="form-control" id="kochzeit" name="kochzeit" min="0">
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Speichern</button>
+                    {% if role in ['user', 'admin'] %}
+                        <button type="submit" class="btn btn-primary">Speichern</button>
+                    {% else %}
+                        <p class="text-warning">Nur angemeldete Nutzer können Rezepte hinzufügen.</p>
+                    {% endif %}
                 </form>
             </div>
             <div class="col-md-6">
@@ -139,12 +143,15 @@
                         <tr>
                             <td>{{ essen.id }}</td>
                             <td>{{ essen.name }}</td>
-                            <td>{{ essen.Kochzeit }} Stunden</td>
                             <td>{{ essen.kochzeit }} Stunden</td>
                             <td>
-                                <form method="post" action="{{ url_for('loesche_essen', essen_id=essen.id) }}" style="display:inline;">
+                                {% if role == 'admin' %}
+                                <form method="post" action="{{ url_for('loesche_essen', essen_id=essen.id, role=role) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                                 </form>
+                                {% else %}
+                                    <span class="text-muted">Keine Rechte</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

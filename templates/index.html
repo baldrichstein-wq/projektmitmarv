@@ -87,12 +87,19 @@
     <div class="container mt-5">
         <div class="row">
             <div class="col-md-8 offset-md-2 text-center">
-                <h1 class="mb-4">Hallo {{ name }}!</h1>
+                <h1 class="mb-4">Hallo {{ role }}!</h1>
                 <p class="lead">Hier könnten Ihr Rezepte für Essen und Weine suchen und Hinzufügen.</p>
                 <p class="lead">Ihr könnt euch Rezept für x Personen und x Liter wein berechnen lassen.</p>
-                <a class="btn btn-primary btn-lg mt-3" href="{{ url_for('verwalte_benutzer') }}">Benutzer verwalten</a>
-                <a class="btn btn-secondary btn-lg mt-3 ms-2" href="{{ url_for('verwalte_wein') }}">Wein verwalten</a>
-                <a class="btn btn-success btn-lg mt-3 ms-2" href="{{ url_for('verwalte_essen') }}">Essen verwalten</a>
+                <a class="btn btn-info" href="{{ url_for('suche', role=role) }}">Suche</a>
+
+                {% if role in ['user', 'admin'] %}
+                    <a class="btn btn-secondary" href="{{ url_for('verwalte_wein', role=role) }}">Wein verwalten</a>
+                    <a class="btn btn-success" href="{{ url_for('verwalte_essen', role=role) }}">Essen verwalten</a>
+                {% endif %}
+
+                {% if role == 'admin' %}
+                    <a class="btn btn-primary" href="{{ url_for('verwalte_benutzer', role=role) }}">Benutzer verwalten</a>
+                {% endif %}
             </div>
         </div>
     </div>

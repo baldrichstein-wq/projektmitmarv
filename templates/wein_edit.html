@@ -120,8 +120,12 @@
                     <input type="number" step="0.1" class="form-control" id="alcohol_content" name="alcohol_content" min="0" value="{{ wine.alcohol_content }}">
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary">Aktualisieren</button>
-            <a href="{{ url_for('verwalte_wein') }}" class="btn btn-secondary ms-2">Abbrechen</a>
+            {% if role in ['user', 'admin'] %}
+                <button type="submit" class="btn btn-primary">Aktualisieren</button>
+            {% else %}
+                <p class="text-warning">Nur angemeldete Nutzer können Wein aktualisieren.</p>
+            {% endif %}
+            <a href="{{ url_for('verwalte_wein', role=role) }}" class="btn btn-secondary ms-2">Abbrechen</a>
         </form>
     </div>
 

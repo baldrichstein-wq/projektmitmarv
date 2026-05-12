@@ -88,60 +88,47 @@
             {% endif %}
         {% endwith %}
 
+        {% if role in ['user', 'admin'] %}
         <div class="row">
             <div class="col-md-6">
                 <h2>Neuen Wein hinzufügen</h2>
-                <form method="post">
+                <form method="post" action="{{ url_for('verwalte_wein', role=role) }}">
                     <div class="mb-3">
-                        <label for="name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="ingredients" class="form-label">Zutaten (kommagetrennt)</label>
-                        <textarea class="form-control" id="ingredients" name="ingredients" rows="3" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Beschreibung</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="brewing_instructions" class="form-label">Brauanleitung</label>
-                        <textarea class="form-control" id="brewing_instructions" name="brewing_instructions" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="brewing_time" class="form-label">Gärzeit (Tage)</label>
-                            <input type="number" class="form-control" id="brewing_time" name="brewing_time" min="0">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="alcohol_content" class="form-label">Alkoholgehalt (%)</label>
-                            <input type="number" step="0.1" class="form-control" id="alcohol_content" name="alcohol_content" min="0">
-                        </div>
+                        <label class="form-label">Name des Weins</label>
+                        <input type="text" name="name" class="form-control" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Speichern</button>
                 </form>
             </div>
-            <div class="col-md-6">
+        </div>
+        <hr>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-12">
                 <h2>Gespeicherte Weine</h2>
-                <table class="table table-striped">
+                <table class="table">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Name</th>
                             <th>Alkohol</th>
-                            <th>Aktion</th>
+                            <th>Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for wine in wines %}
                         <tr>
-                            <td>{{ wine.id }}</td>
                             <td>{{ wine.name }}</td>
                             <td>{{ wine.alcohol_content }}%</td>
                             <td>
-                                <form method="post" action="{{ url_for('loesche_wein', wine_id=wine.id) }}" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
+                                {% if role == 'admin' %}
+                                <form method="post" action="{{ url_for('loesche_wein', wine_id=wine.id, role=role) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
                                 </form>
+                                {% endif %}
+                                {% if role in ['user', 'admin'] %}
+                                <a href="{{ url_for('verwalte_wein', wine_id=wine.id, role=role) }}" class="btn btn-warning btn-sm">Bearbeiten</a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
