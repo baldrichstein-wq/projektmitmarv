@@ -5,36 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rezepteverwaltung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-        <style>
+    <style>
         body {
             /* Pfad zum Bild */
-           background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
-    
-            /* Bild fixieren (scrollt nicht mit) */
+            background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
+            /* Bild fixieren */
             background-attachment: fixed;
-    
             /* Bild zentrieren */
             background-position: center;
-    
-            /* Bild so skalieren, dass der ganze Bereich bedeckt ist */
+            /* Bild skalieren */
             background-size: cover;
-    
-            /* Verhindert, dass das Bild gekachelt wird */
             background-repeat: no-repeat;
-    
-            /* Fallback-Farbe, falls das Bild nicht lädt */
+            /* Fallback-Farbe */
             background-color: #f4e3d7; 
-    
             margin: 0;
             padding: 0;
         }
         .container {
-            color: #FDFD96; /* Oder eine Farbe deiner Wahl */
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Macht den Text auf dem unruhigen Hintergrund besser lesbar */ 
-            /* Eine elegante Serif-Schrift (passend zum Kochbuch-Look) */
+            color: #FDFD96; 
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); 
             font-family: "Times New Roman", Times, serif;  
         }
-        </style>
+        .card {
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 1px solid #FDFD96;
+            color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .table {
+            color: #FDFD96;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -44,9 +47,9 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="{{ url_for('home') }}">Startseite</a>
+                        <a class="nav-link" href="{{ url_for('home') }}">Startseite</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('ueber_uns') }}">Über uns</a>
@@ -55,25 +58,18 @@
                         <a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('verwalte_wein') }}">Wein</a>
+                        <a class="nav-link" href="{{ url_for('wein_verwalten') }}">Wein</a>
                     </li>
                      <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a>
+                        <a class="nav-link active" href="{{ url_for('verwalte_essen') }}">Essen</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('suche') }}">Suche</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('abmeldung') }}">Abmelden</a></li>
-                        </ul>
-                    </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('anmeldung') }}">Anmeldung</a>
+                        <a class="nav-link" href="{{ url_for('abmeldung') }}">Abmelden</a>
                     </li>
                 </ul>
             </div>
@@ -82,6 +78,7 @@
 
     <div class="container mt-5">
         <h1>Rezepteverwaltung</h1>
+        
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -90,57 +87,72 @@
             {% endif %}
         {% endwith %}
 
-        <div class="row">
-            <div class="col-md-6">
-                <h2>Neues Rezept hinzufügen</h2>
-                <form method="post">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Name</label>
+        {% if role in ['user', 'admin'] %}
+        <div class="card">
+            <h2>Neues Rezept hinzufügen</h2>
+            <form method="post" action="{{ url_for('verwalte_essen') }}">
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="name" class="form-label">Name des Gerichts</label>
                         <input type="text" class="form-control" id="name" name="name" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="ingredients" class="form-label">Zutaten (kommagetrennt)</label>
-                        <textarea class="form-control" id="ingredients" name="ingredients" rows="3" required></textarea>
+                    <div class="col-md-2 mb-3">
+                        <label for="personenanzahl" class="form-label">Personen</label>
+                        <input type="number" class="form-control" id="personenanzahl" name="personenanzahl" min="1" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Beschreibung</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    <div class="col-md-2 mb-3">
+                        <label for="kochzeit" class="form-label">Zeit (h)</label>
+                        <input type="number" class="form-control" id="kochzeit" name="kochzeit" min="0">
                     </div>
-                    <div class="mb-3">
-                        <label for="brewing_instructions" class="form-label">Zubereitung</label>
-                        <textarea class="form-control" id="brewing_instructions" name="brewing_instructions" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="kochzeit" class="form-label">Kochzeit (Stunden)</label>
-                            <input type="number" class="form-control" id="kochzeit" name="kochzeit" min="0">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Speichern</button>
-                </form>
-            </div>
-            <div class="col-md-6">
+                </div>
+                <div class="mb-3">
+                    <label for="ingredients" class="form-label">Zutaten (kommagetrennt)</label>
+                    <input type="text" class="form-control" id="ingredients" name="ingredients" placeholder="z.B. 500g Nudeln, 1 Zwiebel" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Kurzbeschreibung</label>
+                    <textarea class="form-control" id="description" name="description" rows="2" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="cooking_instructions" class="form-label">Zubereitungsschritte</label>
+                    <textarea class="form-control" id="cooking_instructions" name="cooking_instructions" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Speichern</button>
+            </form>
+        </div>
+        {% else %}
+            <div class="alert alert-warning">Nur angemeldete Nutzer können Rezepte hinzufügen.</div>
+        {% endif %}
+
+        <div class="row mt-4">
+            <div class="col-md-12">
                 <h2>Gespeicherte Rezepte</h2>
-                <table class="table table-striped">
+                <table class="table table-dark table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Name</th>
                             <th>Kochzeit</th>
-                            <th>Aktion</th>
+                            <th>Beschreibung</th>
+                            <th class="text-end">Aktion</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for essen in essens %}
                         <tr>
-                            <td>{{ essen.id }}</td>
-                            <td>{{ essen.name }}</td>
-                            <td>{{ essen.Kochzeit }} Stunden</td>
-                            <td>{{ essen.kochzeit }} Stunden</td>
-                            <td>
-                                <form method="post" action="{{ url_for('loesche_essen', essen_id=essen.id) }}" style="display:inline;">
+                            <td><strong>{{ essen.name }}</strong></td>
+                            <td>{{ essen.kochzeit }} Minuten</td>
+                            <td>{{ essen.description }}</td>
+                            <td class="text-end">
+                                {% if role == 'admin' %}
+                                <form method="post" action="{{ url_for('loesche_essen', essen_id=essen.id, role=role) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                                 </form>
+                                {% endif %}
+                                {% if role in ['user', 'admin'] %}
+                                    <a href="#" class="btn btn-warning btn-sm">Bearbeiten</a>
+                                {% else %}
+                                    <span class="text-muted">Keine Rechte</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

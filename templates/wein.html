@@ -5,74 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weinverwaltung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-        <style>
+    <style>
         body {
-            /* Pfad zum Bild */
             background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
-    
-            /* Bild fixieren (scrollt nicht mit) */
             background-attachment: fixed;
-    
-            /* Bild zentrieren */
             background-position: center;
-    
-            /* Bild so skalieren, dass der ganze Bereich bedeckt ist */
             background-size: cover;
-    
-            /* Verhindert, dass das Bild gekachelt wird */
             background-repeat: no-repeat;
-    
-            /* Fallback-Farbe, falls das Bild nicht lädt */
             background-color: #f4e3d7; 
-    
             margin: 0;
             padding: 0;
         }
         .container {
-            color: #FDFD96; /* Oder eine Farbe deiner Wahl */
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Macht den Text auf dem unruhigen Hintergrund besser lesbar */ 
-            /* Eine elegante Serif-Schrift (passend zum Kochbuch-Look) */
+            color: #FDFD96; 
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); 
             font-family: "Times New Roman", Times, serif;  
         }
-        </style>
+        .card {
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 1px solid #FDFD96;
+            color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .table {
+            color: #FDFD96;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('home') }}">Das Rezeptbuch</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="{{ url_for('home') }}">Startseite</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('ueber_uns') }}">Über uns</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('verwalte_wein') }}">Wein</a>
-                    </li>
-                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('suche') }}">Suche</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Startseite</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('ueber_uns') }}">Über uns</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('wein_verwalten') }}">Wein</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('suche') }}">Suche</a></li>
                 </ul>
                 <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('abmeldung') }}">Abmelden</a></li>
-                        </ul>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('abmeldung') }}">Abmelden</a></li>
                 </ul>
             </div>
         </div>
@@ -80,68 +59,83 @@
 
     <div class="container mt-5">
         <h1>Weinverwaltung</h1>
+        
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <div class="row">
-            <div class="col-md-6">
-                <h2>Neuen Wein hinzufügen</h2>
-                <form method="post">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
+        {% if role in ['user', 'admin'] %}
+        <div class="card">
+            <h2>Neuen Wein hinzufügen</h2>
+            <form method="post" action="{{ url_for('wein_verwalten') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Name des Weins</label>
+                        <input type="text" name="name" class="form-control" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="ingredients" class="form-label">Zutaten (kommagetrennt)</label>
-                        <textarea class="form-control" id="ingredients" name="ingredients" rows="3" required></textarea>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Liter</label>
+                        <input type="number" name="liter" class="form-control" value="5">
                     </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Beschreibung</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Alkoholgehalt (%)</label>
+                        <input type="text" name="alcohol_content" class="form-control">
                     </div>
-                    <div class="mb-3">
-                        <label for="brewing_instructions" class="form-label">Brauanleitung</label>
-                        <textarea class="form-control" id="brewing_instructions" name="brewing_instructions" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Zutaten (mit Komma trennen)</label>
+                    <input type="text" name="ingredients" class="form-control" placeholder="z.B. 2kg Äpfel, 500g Zucker">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Kurzbeschreibung</label>
+                    <textarea name="description" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Anleitung</label>
+                        <textarea name="brewing_instructions" class="form-control" rows="3"></textarea>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="brewing_time" class="form-label">Gärzeit (Tage)</label>
-                            <input type="number" class="form-control" id="brewing_time" name="brewing_time" min="0">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="alcohol_content" class="form-label">Alkoholgehalt (%)</label>
-                            <input type="number" step="0.1" class="form-control" id="alcohol_content" name="alcohol_content" min="0">
-                        </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Braudauer (Tage/Wochen)</label>
+                        <input type="text" name="brewing_time" class="form-control">
                     </div>
-                    <button type="submit" class="btn btn-primary">Speichern</button>
-                </form>
-            </div>
-            <div class="col-md-6">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Wein speichern</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <div class="row mt-4">
+            <div class="col-md-12">
                 <h2>Gespeicherte Weine</h2>
-                <table class="table table-striped">
+                <table class="table table-dark table-hover">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Name</th>
                             <th>Alkohol</th>
-                            <th>Aktion</th>
+                            <th>Beschreibung</th>
+                            <th class="text-end">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for wine in wines %}
                         <tr>
-                            <td>{{ wine.id }}</td>
-                            <td>{{ wine.name }}</td>
+                            <td><strong>{{ wine.name }}</strong></td>
                             <td>{{ wine.alcohol_content }}%</td>
-                            <td>
+                            <td>{{ wine.description }}</td>
+                            <td class="text-end">
+                                {% if role == 'admin' %}
                                 <form method="post" action="{{ url_for('loesche_wein', wine_id=wine.id) }}" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
+                                    <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
                                 </form>
+                                {% endif %}
+                                {% if role in ['user', 'admin'] %}
+                                <a href="#" class="btn btn-warning btn-sm">Bearbeiten</a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
