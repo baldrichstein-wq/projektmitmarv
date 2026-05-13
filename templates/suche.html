@@ -35,13 +35,16 @@
         .list-group-item {
             background-color: transparent;
         }
-        .calculator-box {
+        .calculator-box, .recipe-box {
             background: #e9ecef;
             border: 1px solid #ced4da;
             padding: 15px;
             margin-top: 10px;
             border-radius: 5px;
-            display: none; /* Initial versteckt */
+        }
+        .recipe-box {
+            background-color: #f8f9fa;
+            border-left: 5px solid #8B4513;
         }
         .btn-custom {
             background-color: #8B4513;
@@ -50,9 +53,6 @@
         .btn-custom:hover {
             background-color: #5D2E0A;
             color: white;
-        }
-        .badge-info {
-            background-color: #6c757d;
         }
     </style>
 </head>
@@ -99,13 +99,26 @@
                                 {% endfor %}
                             </ul>
 
-                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleCalc('calc-wine-{{ w.id }}')">Menge umrechnen</button>
-                            
-                            <div id="calc-wine-{{ w.id }}" class="calculator-box">
+                            <div class="d-flex gap-2 mb-3">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleCalc('calc-wine-{{ w.id }}')">Menge umrechnen</button>
+                                <button class="btn btn-sm btn-custom" type="button" data-bs-toggle="collapse" data-bs-target="#recipe-wine-{{ w.id }}">
+                                    Vollständiges Rezept
+                                </button>
+                            </div>
+
+                            <div id="calc-wine-{{ w.id }}" class="calculator-box" style="display:none;">
                                 <label class="form-label">Zielmenge (Liter):</label>
                                 <input type="number" class="form-control mb-2" step="0.5" placeholder="z.B. 10" 
                                        oninput="calculate(this, {{ w.liter|replace(',', '.') }}, 'list-wine-{{ w.id }}')">
-                                <small class="text-muted">Geben Sie die gewünschte Literanzahl ein.</small>
+                            </div>
+
+                            <div class="collapse mt-3" id="recipe-wine-{{ w.id }}">
+                                <div class="recipe-box">
+                                    <h6>Brauanweisung:</h6>
+                                    <p>{{ w.brewing_instructions }}</p>
+                                    <hr>
+                                    <p><strong>Gärzeit:</strong> ca. {{ w.brewing_time }} Wochen</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -132,13 +145,26 @@
                                 {% endfor %}
                             </ul>
 
-                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleCalc('calc-essen-{{ e.id }}')">Personen anpassen</button>
-                            
-                            <div id="calc-essen-{{ e.id }}" class="calculator-box">
+                            <div class="d-flex gap-2 mb-3">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleCalc('calc-essen-{{ e.id }}')">Personen anpassen</button>
+                                <button class="btn btn-sm btn-custom" type="button" data-bs-toggle="collapse" data-bs-target="#recipe-essen-{{ e.id }}">
+                                    Vollständiges Rezept
+                                </button>
+                            </div>
+
+                            <div id="calc-essen-{{ e.id }}" class="calculator-box" style="display:none;">
                                 <label class="form-label">Neue Personenanzahl:</label>
                                 <input type="number" class="form-control mb-2" step="1" placeholder="z.B. 8" 
                                        oninput="calculate(this, {{ e.personenanzahl }}, 'list-essen-{{ e.id }}')">
-                                <small class="text-muted">Zutaten passen sich automatisch an.</small>
+                            </div>
+
+                            <div class="collapse mt-3" id="recipe-essen-{{ e.id }}">
+                                <div class="recipe-box">
+                                    <h6>Kochanweisung:</h6>
+                                    <p>{{ e.kochanweisung }}</p>
+                                    <hr>
+                                    <p><strong>Gesamtzeit:</strong> {{ e.Kochzeit }} Minuten</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -150,14 +176,14 @@
         {% endif %}
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // Zeigt oder versteckt die Taschenrechner-Box
         function toggleCalc(id) {
             const el = document.getElementById(id);
             el.style.display = (el.style.display === 'block') ? 'none' : 'block';
         }
 
-        // Führt die Skalierung im Browser durch
         function calculate(inputField, baseValue, listId) {
             const targetValue = parseFloat(inputField.value);
             if (!targetValue || targetValue <= 0 || !baseValue) return;
@@ -167,21 +193,15 @@
 
             listItems.forEach(item => {
                 const originalText = item.getAttribute('data-base-text');
-                
-                // Regex sucht nach Zahlen/Brüchen am Anfang (z.B. "500", "1,5", "1.5")
                 const match = originalText.match(/^(\d+([.,]\d+)?)(.*)/);
                 
                 if (match) {
                     const amount = parseFloat(match[1].replace(',', '.'));
                     const rest = match[3];
                     let newAmount = (amount * factor).toFixed(2);
-                    
-                    // Formatierung: Punkt zu Komma und unnötige Nullen entfernen
                     newAmount = newAmount.replace('.', ',').replace(/,00$/, '').replace(/(,\d)0$/, '$1');
-                    
                     item.innerText = newAmount + rest;
                 } else {
-                    // Falls keine Zahl gefunden wurde (z.B. "Eine Prise Salz"), bleibt der Text gleich
                     item.innerText = originalText;
                 }
             });
