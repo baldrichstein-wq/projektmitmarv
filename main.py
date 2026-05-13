@@ -136,6 +136,20 @@ def wein_verwalten():
 
     weine = wine.get_all_wines()
     return render_template('wein.html', wines=weine, role=role)
+@app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
+def loesche_wein(wine_id):
+    role = session.get('user_role', 'gast')
+    if role != 'admin':
+        flash('Nur Administratoren können Weine löschen.', 'danger')
+        return redirect(url_for('wein_verwalten'))
+    
+    # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
+    if wine.delete_wine(wine_id):
+        flash('Wein wurde erfolgreich gelöscht.', 'success')
+    else:
+        flash('Fehler beim Löschen des Weins.', 'danger')
+        
+    return redirect(url_for('wein_verwalten'))
 
 @app.route('/benutzer/rolle_aendern/<int:user_id>', methods=['POST'])
 def rolle_update(user_id):
@@ -172,6 +186,21 @@ def verwalte_essen():
 
     speisen_liste = essen.get_all_essen()
     return render_template('essen.html', essen=speisen_liste, role=role)
+
+@app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
+def loesche_essen(essen_id):
+    role = session.get('user_role', 'gast')
+    if role != 'admin':
+        flash('Nur Administratoren können Rezepte löschen.', 'danger')
+        return redirect(url_for('wein_verwalten'))
+    
+    # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
+    if wine.delete_wine(wine_id):
+        flash('Rezept wurde erfolgreich gelöscht.', 'success')
+    else:
+        flash('Fehler beim Löschen des Rezepts.', 'danger')
+        
+    return redirect(url_for('verwalte_essen'))
 
 @app.route('/suche')
 def suche():
