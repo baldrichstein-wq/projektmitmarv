@@ -24,11 +24,17 @@
         .table { color: white; background-color: rgba(0,0,0,0.5); }
     </style>
 </head>
-<body>
+<tbody>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('home') }}">Das Rezeptbuch</a>
             <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Startseite</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('wein_verwalten') }}">Wein</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('suche') }}">Suche</a></li>
+                </ul>
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Startseite</a></li>
                 </ul>
@@ -94,6 +100,21 @@
             </div>
         </div>
     </div>
+    <tr>
+    <td>{{ user.id }}</td>
+    <td>{{ user.name }}</td>
+    <td>{{ user.email }}</td>
+    <td>
+        <form method="POST" action="{{ url_for('rolle_update', user_id=user.id) }}" class="d-flex">
+            <select name="rolle" class="form-select form-select-sm me-2">
+                <option value="gast" {% if user.rolle == 'gast' %}selected{% endif %}>Gast</option>
+                <option value="benutzer" {% if user.rolle == 'benutzer' %}selected{% endif %}>Benutzer</option>
+                <option value="admin" {% if user.rolle == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-outline-warning">Update</button>
+        </form>
+    </td>
+    </tr>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-</body>
+</tbody>
 </html>
