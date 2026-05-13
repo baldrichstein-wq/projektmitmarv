@@ -6,7 +6,7 @@ PREDEFINED_Essen = {
     'name': 'Kaiserliches Kräuter-Kaninchen mit Rosmarin',
     'personenanzahl': 4,
     'Zutaten': [
-        '1/2 Kaninchen',
+        '0,5 kg Kaninchen',
         '4 Zweige frischer Rosmarin',
         '2 Zweige Thymian',
         '1 Zehe Knoplauch (zerdrückt)',
