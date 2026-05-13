@@ -19,7 +19,6 @@ PREDEFINED_Essen = {
     'Kochzeit': 2,
 }
 
-
 def init_db():
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
@@ -50,7 +49,6 @@ def init_db():
             ))
             conn.commit()
 
-
 def add_essen(name, personenanzahl, Zutaten, description, kochanweisung, Kochzeit):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
@@ -68,34 +66,24 @@ def add_essen(name, personenanzahl, Zutaten, description, kochanweisung, Kochzei
         conn.commit()
         return cursor.lastrowid
 
-
 def get_all_essen():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('SELECT id, name, personenanzahl, Zutaten, description, kochanweisung, Kochzeit FROM essen ORDER BY id')
     rows = cursor.fetchall()
     conn.close()
-    essen= []
+    essen_liste = []
     for row in rows:
-        essen.append({
+        essen_liste.append({
             'id': row[0],
             'name': row[1],
             'personenanzahl': row[2],
             'ingredients': json.loads(row[3]),
-            'description': row[3],
-            'kochanweisung': row[4],
-            'Kochzeit': row[5]
+            'description': row[4], # Korrigiert: war vorher row[3]
+            'kochanweisung': row[5],
+            'Kochzeit': row[6]
         })
-    return essen
-
-
-def delete_essen(essen_id):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM essen WHERE id = ?', (essen_id,))
-        conn.commit()
-        return cursor.rowcount > 0
-
+    return essen_liste
 
 def get_essen(essen_id):
     conn = sqlite3.connect(DB_FILE)
@@ -114,6 +102,14 @@ def get_essen(essen_id):
             'Kochzeit': row[6]
         }
     return None
+
+def delete_essen(essen_id):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM essen WHERE id = ?', (essen_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
 def update_essen(essen_id, name, personenanzahl, Zutaten, description, kochanweisung, Kochzeit):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
