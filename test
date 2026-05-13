@@ -1,0 +1,129 @@
+from flask import Flask, render_template, request, redirect, url_for, flash
+import os
+import benutzer
+import wine
+import essen
+
+app = Flask(__name__, template_folder='templates')
+app.secret_key = 'supersecretkey123' # Bleibt für flash() notwendig
+
+# Initialisiere Datenbanken
+benutzer.init_db()
+wine.init_db()
+essen.init_db()
+
+@app.route('/')
+def home():
+    # Rolle aus URL-Parameter abrufen, Standard ist 'besucher'
+    role = request.args.get('role', 'besucher')
+    return render_template('index.html', name=role, role=role)
+
+@app.route('/benutzer', methods=['GET', 'POST'])
+def verwalte_benutzer():
+    role = request.args.get('role', 'besucher')
+    # Nur Admin darf Benutzer verwalten
+    if role != 'admin':
+        flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer verwalten.', 'danger')
+        return redirect(url_for('home', role=role))
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        success, message = benutzer.benutzer_anlegen(name, email, password)
+        flash(message, 'success' if success else 'danger')
+        return redirect(url_for('verwalte_benutzer', role=role))
+
+    users = benutzer.get_all_users()
+    return render_template('benutzer.html', users=users, role=role)
+
+@app.route('/anmeldung', methods=['GET', 'POST'])
+def anmeldung():
+    role = request.args.get('role', 'besucher')
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        user = benutzer.benutzer_anmelden(email, password)
+        if user:
+            flash(f"Willkommen {user['name']}!", 'success')
+            # Weiterleitung mit der Rolle aus der Datenbank
+            return redirect(url_for('home', role=user['rolle']))
+        else:
+            flash('Ungültige Anmeldedaten.', 'danger')
+    return render_template('anmeldung.html', role=role)
+
+@app.route('/essen', methods=['GET', 'POST'])
+def verwalte_essen():
+    role = request.args.get('role', 'besucher')
+    # Besucher dürfen diese Seite gar nicht sehen
+    if role == 'besucher':
+        flash('Bitte melden Sie sich an, um Rezepte zu verwalten.', 'danger')
+        return redirect(url_for('home', role=role))
+
+    if request.method == 'POST':
+        # Erstellen/Update nur für 'user' und 'admin'
+        name = request.form.get('name')
+        # ... (restliche Daten sammeln)
+        essen.add_essen(name, ...) # Logik aus essen.py
+        flash('Essen gespeichert.', 'success')
+        return redirect(url_for('verwalte_essen', role=role))
+
+    speisen_liste = essen.get_all_essen()
+    return render_template('essen.html', essens=speisen_liste, role=role)
+
+@app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
+def loesche_essen(essen_id):
+    role = request.args.get('role', 'besucher')
+    # Nur Admin darf löschen
+    if role != 'admin':
+        flash('Nur Administratoren können Rezepte löschen.', 'danger')
+        return redirect(url_for('verwalte_essen', role=role))
+    
+    essen.delete_essen(essen_id)
+    flash('Erfolgreich gelöscht.', 'success')
+    return redirect(url_for('verwalte_essen', role=role))
+
+@app.route('/suche')
+def suche():
+    role = request.args.get('role', 'besucher')
+    query = request.args.get('q', '').strip().lower()
+    # Suche ist für alle (auch Besucher) erlaubt
+    # ... (Suchlogik)
+    return render_template('suche.html', query=query, role=role)
+#der abschnitt hier drüber ist für die main.py wie aus den kommentaren in dem code ersichtlich
+#der folgende codeabschnitt ist für die index.html
+<div class="container mt-5">
+    <h1>Hallo {{ role }}!</h1>
+    
+    <a class="btn btn-info" href="{{ url_for('suche', role=role) }}">Suche</a>
+
+    {% if role in ['user', 'admin'] %}
+        <a class="btn btn-secondary" href="{{ url_for('verwalte_wein', role=role) }}">Wein verwalten</a>
+        <a class="btn btn-success" href="{{ url_for('verwalte_essen', role=role) }}">Essen verwalten</a>
+    {% endif %}
+
+    {% if role == 'admin' %}
+        <a class="btn btn-primary" href="{{ url_for('verwalte_benutzer', role=role) }}">Benutzer verwalten</a>
+    {% endif %}
+</div>
+#der nächste abschnitt ist für die essen.html
+{% if role in ['user', 'admin'] %}
+    <form method="post" action="{{ url_for('verwalte_essen', role=role) }}">
+        <button type="submit">Speichern</button>
+    </form>
+{% endif %}
+
+<table>
+    {% for e in essens %}
+    <tr>
+        <td>{{ e.name }}</td>
+        <td>
+            {% if role == 'admin' %}
+            <form method="post" action="{{ url_for('loesche_essen', essen_id=e.id, role=role) }}">
+                <button type="submit" class="btn-danger">Löschen</button>
+            </form>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
