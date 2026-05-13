@@ -23,7 +23,6 @@ PREDEFINED_WINE = {
     'alcohol_content': 15.0
 }
 
-
 def init_db():
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
@@ -44,7 +43,7 @@ def init_db():
         if cursor.fetchone()[0] == 0:
             cursor.execute('''
                 INSERT INTO wines (name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (
                 PREDEFINED_WINE['name'],
                 PREDEFINED_WINE['liter'],
@@ -55,7 +54,6 @@ def init_db():
                 PREDEFINED_WINE['alcohol_content'],
             ))
             conn.commit()
-
 
 def add_wine(name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content):
     with sqlite3.connect(DB_FILE) as conn:
@@ -75,11 +73,11 @@ def add_wine(name, liter, ingredients, description, brewing_instructions, brewin
         conn.commit()
         return cursor.lastrowid
 
-
 def get_all_wines():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, ingredients, description, brewing_instructions, brewing_time, alcohol_content FROM wines ORDER BY id')
+    # Wichtig: liter muss im SELECT enthalten sein
+    cursor.execute('SELECT id, name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content FROM wines ORDER BY id')
     rows = cursor.fetchall()
     conn.close()
     wines = []
@@ -95,15 +93,6 @@ def get_all_wines():
             'alcohol_content': row[7],
         })
     return wines
-
-
-def delete_wine(wine_id):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM wines WHERE id = ?', (wine_id,))
-        conn.commit()
-        return cursor.rowcount > 0
-
 
 def get_wine(wine_id):
     conn = sqlite3.connect(DB_FILE)
@@ -123,6 +112,14 @@ def get_wine(wine_id):
             'alcohol_content': row[7],
         }
     return None
+
+def delete_wine(wine_id):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM wines WHERE id = ?', (wine_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
 def update_wine(wine_id, name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()

@@ -41,7 +41,6 @@ essen.init_db()
 
 @app.route('/')
 def home():
-    # Rolle aus Session holen, Standard ist 'besucher'
     role = session.get('user_role', 'gast')
     name = session.get('user_name', 'gast')
     return render_template('index.html', name=name, role=role)
@@ -62,7 +61,6 @@ def verwalte_benutzer():
         name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
-        # Standardrolle für neue User über das Formular könnte 'user' sein
         success, message = benutzer.benutzer_anlegen(name, email, password)
         flash(message, 'success' if success else 'danger')
         return redirect(url_for('verwalte_benutzer'))
@@ -93,6 +91,7 @@ def abmeldung():
     session.clear()
     flash('Erfolgreich abgemeldet.', 'success')
     return redirect(url_for('home'))
+
 @app.route('/registrierung', methods=['GET', 'POST'])
 def registrierung():
     if request.method == 'POST':
@@ -104,7 +103,6 @@ def registrierung():
             flash('Bitte alle Felder ausfüllen.', 'danger')
             return redirect(url_for('registrierung'))
 
-        # Nutzt die vorhandene Funktion aus deinem benutzer-Modul
         success, message = benutzer.benutzer_anlegen(name, email, password)
         
         if success:
@@ -124,13 +122,14 @@ def verwalte_wein():
 
     if request.method == 'POST':
         name = request.form.get('name')
+        liter = request.form.get('liter', '5')
         ingredients = request.form.get('ingredients').split(',')
         description = request.form.get('description')
         instructions = request.form.get('brewing_instructions')
         time = request.form.get('brewing_time')
         alcohol = request.form.get('alcohol_content')
 
-        wine.add_wine(name, [i.strip() for i in ingredients], description, instructions, time, alcohol)
+        wine.add_wine(name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
         flash(f'Wein "{name}" hinzugefügt!', 'success')
         return redirect(url_for('verwalte_wein'))
 
@@ -145,9 +144,14 @@ def verwalte_essen():
         return redirect(url_for('anmeldung'))
 
     if request.method == 'POST':
-        # ... (Logik wie gehabt)
         name = request.form.get('name', '').strip()
-        # ... (Verarbeitung)
+        personen = request.form.get('personenanzahl', '4')
+        zutaten = request.form.get('ingredients', '').split(',')
+        desc = request.form.get('description', '').strip()
+        anw = request.form.get('kochanweisung', '').strip()
+        zeit = request.form.get('kochzeit', '0')
+        
+        essen.add_essen(name, int(personen), [z.strip() for z in zutaten], desc, anw, int(zeit))
         flash('Essen gespeichert.', 'success')
         return redirect(url_for('verwalte_essen'))
 
@@ -158,8 +162,34 @@ def verwalte_essen():
 def suche():
     role = session.get('user_role', 'gast')
     query = request.args.get('q', '').strip().lower()
-    # ... (Suchlogik wie gehabt)
-    return render_template('suche.html', query=query, weine=[], speisen=[], role=role)
+    
+    gefundene_weine = []
+    gefundene_speisen = []
+
+    if query:
+        # Weine durchsuchen (Name, Beschreibung und jede einzelne Zutat)
+        alle_weine = wine.get_all_wines()
+        for w in alle_weine:
+            zutaten_string = " ".join(w['ingredients']).lower()
+            if (query in w['name'].lower() or 
+                (w['description'] and query in w['description'].lower()) or 
+                query in zutaten_string):
+                gefundene_weine.append(w)
+
+        # Speisen durchsuchen (Name, Beschreibung und jede einzelne Zutat)
+        alle_speisen = essen.get_all_essen()
+        for e in alle_speisen:
+            zutaten_string = " ".join(e['ingredients']).lower()
+            if (query in e['name'].lower() or 
+                (e['description'] and query in e['description'].lower()) or 
+                query in zutaten_string):
+                gefundene_speisen.append(e)
+
+    return render_template('suche.html', 
+                           query=query, 
+                           weine=gefundene_weine, 
+                           speisen=gefundene_speisen, 
+                           role=role)
 
 if __name__ == '__main__':
     app.run(debug=True)
