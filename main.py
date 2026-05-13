@@ -41,8 +41,9 @@ essen.init_db()
 
 @app.route('/')
 def home():
+    # Vereinheitlichung: Wenn keine Rolle in der Session, dann 'gast'
     role = session.get('user_role', 'gast')
-    name = session.get('user_name', 'gast')
+    name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
 
 @app.route('/ueber-uns')
@@ -114,7 +115,7 @@ def registrierung():
     return render_template('registrierung.html', role=session.get('user_role', 'gast'))
 
 @app.route('/wein', methods=['GET', 'POST'])
-def verwalte_wein():
+def wein_verwalten():
     role = session.get('user_role', 'gast')
     if role == 'gast':
         flash('Bitte melde dich an, um Weine zu sehen.', 'danger')
@@ -131,10 +132,24 @@ def verwalte_wein():
 
         wine.add_wine(name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
         flash(f'Wein "{name}" hinzugefügt!', 'success')
-        return redirect(url_for('verwalte_wein'))
+        return redirect(url_for('wein_verwalten'))
 
     weine = wine.get_all_wines()
     return render_template('wein.html', wines=weine, role=role)
+
+@app.route('/benutzer/rolle_aendern/<int:user_id>', methods=['POST'])
+def rolle_update(user_id):
+    if session.get('user_role') != 'admin':
+        flash('Nicht autorisiert.', 'danger')
+        return redirect(url_for('home'))
+    
+    neue_rolle = request.form.get('rolle')
+    if benutzer.rolle_aendern(user_id, neue_rolle):
+        flash(f'Rolle für Benutzer ID {user_id} wurde auf {neue_rolle} aktualisiert.', 'success')
+    else:
+        flash('Fehler beim Aktualisieren der Rolle.', 'danger')
+    
+    return redirect(url_for('verwalte_benutzer'))
 
 @app.route('/essen', methods=['GET', 'POST'])
 def verwalte_essen():

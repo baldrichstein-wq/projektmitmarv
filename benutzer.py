@@ -97,11 +97,11 @@ def benutzer_anmelden(email, passwort):
 
 def benutzer_anlegen(name, email, passwort, rolle="benutzer"):
     """Fügt einen neuen Benutzer mit gehashtem Passwort hinzu."""
+    # Falls rolle None oder leer ist, Standardwert nutzen
+    if not rolle:
+        rolle = "benutzer"
+    
     rolle = normalize_rolle(rolle)
-    if rolle == 'gast':
-        rolle = 'benutzer'
-        
-    # Klartext-Passwort in einen sicheren, gesalzenen Hash umwandeln
     hashed_password = generate_password_hash(passwort)
         
     try:
@@ -135,6 +135,16 @@ def get_all_users():
         }
         for row in rows
     ]
+def rolle_aendern(user_id, neue_rolle):
+    """Ändert die Rolle eines Benutzers basierend auf der ID."""
+    neue_rolle = normalize_rolle(neue_rolle)
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE benutzer SET rolle = ? WHERE id = ?', (neue_rolle, user_id))
+    success = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return success
 
 def mache_zu_admin(email):
     """Vergibt Administratorrechte."""
