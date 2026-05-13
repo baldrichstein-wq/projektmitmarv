@@ -90,7 +90,7 @@
         {% if role in ['user', 'admin'] %}
         <div class="card">
             <h2>Neues Rezept hinzufügen</h2>
-            <form method="post">
+            <form method="post" action="{{ url_for('verwalte_essen') }}">
                 <div class="row">
                     <div class="col-md-8 mb-3">
                         <label for="name" class="form-label">Name des Gerichts</label>
@@ -140,7 +140,7 @@
                         {% for essen in essens %}
                         <tr>
                             <td><strong>{{ essen.name }}</strong></td>
-                            <td>{{ essen.kochzeit }} Stunden</td>
+                            <td>{{ essen.kochzeit }} Minuten</td>
                             <td>{{ essen.description }}</td>
                             <td class="text-end">
                                 {% if role == 'admin' %}
