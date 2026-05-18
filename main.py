@@ -13,7 +13,6 @@ app.secret_key = 'supersecretkey123'
 def skaliere_zutaten(zutaten_liste, original_menge, ziel_menge):
     if not original_menge or original_menge == 0:
         return zutaten_liste
-        
     try:
         faktor = float(ziel_menge) / float(original_menge)
     except (ValueError, ZeroDivisionError):
@@ -33,6 +32,7 @@ def skaliere_zutaten(zutaten_liste, original_menge, ziel_menge):
     return skalierte_liste
 
 # --- DATENBANK INITIALISIERUNG ---
+# Wird beim Serverstart ausgeführt und füttert die DBs mit euren vordefinierten Rezepten
 benutzer.init_db()
 wine.init_db()
 essen.init_db()
@@ -45,9 +45,7 @@ def home():
     role = session.get('user_role', 'gast')
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0' ,port=port, debug=True)
+    
 @app.route('/ueber-uns')
 def ueber_uns():
     role = session.get('user_role', 'gast')
@@ -129,15 +127,32 @@ def wein_verwalten():
         ingredients = request.form.get('ingredients').split(',')
         description = request.form.get('description')
         instructions = request.form.get('brewing_instructions')
-        time = request.form.get('brewing_time')
-        alcohol = request.form.get('alcohol_content')
 
-        wine.add_wine(name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
-        flash(f'Wein "{name}" hinzugefügt!', 'success')
+        
+        # Datenabsicherung für deine wine.py (add_wine)
+        try:
+            time = int(request.from.get('brewing_time', '0'))
+            alcohol = float(request.from.get('alcohol_content', '0'))
+        except ValueError:
+            flash('Fehler: Brauzeit muss eine Zahl und Alkoholgehalt eine Kommazahl sein!', 'danger')
+            return redirect(url_for('wine_verwalten'))
+
+        # Aufruf eurer originalen add_wine Funktion aus wine.py
+        wine.add_wine(
+            name, 
+            liter, 
+            [i.strip() for i in ingredients], 
+            description, 
+            instructions, 
+            time, 
+            alcohol
+        )
+        flash(f'Wein "{name}" erfolgreich zur Datenbank hinzugefügt!', 'success')
         return redirect(url_for('wein_verwalten'))
 
     weine = wine.get_all_wines()
     return render_template('wein.html', wines=weine, role=role)
+    
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
 def loesche_wein(wine_id):
     role = session.get('user_role', 'gast')
@@ -239,5 +254,7 @@ def suche():
                            speisen=gefundene_speisen, 
                            role=role)
 
+# --- PROGRAMMSTART (Ganz am Ende der Datei platziert) ---
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
