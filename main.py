@@ -116,6 +116,11 @@ def registrierung():
 
 @app.route('/wein_edit/<int:wine_id>', methods=['GET', 'POST'])
 def update_wine(wine_id):
+    get_wine_by_id = wine.get_wine_by_id(wine_id)
+    if not get_wine_by_id:
+        flash('Wein nicht gefunden.', 'danger')
+        return redirect(url_for('wein_verwalten'))
+    
     role = session.get('user_role', 'gast')
     if role != 'benutzer' and role != 'admin':
         flash('Nur Administratoren und Benutzer können Weine bearbeiten.', 'danger')
@@ -130,12 +135,13 @@ def update_wine(wine_id):
         time = request.form.get('brewing_time')
         alcohol = request.form.get('alcohol_content')
 
+        if not name:
+            flash('Fehler: Der Name des Weins darf nicht leer sein!', 'danger')
+            return redirect(url_for('update_wine', wine_id=wine_id))
+
         wine.update_wine(wine_id, name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
-        if name == None: 
-            return print("Fehler: Name ist None")
-        else:
-            flash(f'Wein "{name}" wurde aktualisiert!', 'success')
-            return redirect(url_for('wein_verwalten'))
+        flash(f'Wein "{name}" wurde aktualisiert!', 'success')
+        return redirect(url_for('wein_verwalten'))
 
     wine_data = wine.get_wine_by_id(wine_id)
     return render_template('wein_edit.html', wine=wine_data, role=role)
