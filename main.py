@@ -215,7 +215,7 @@ def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')
     if role != 'admin':
         flash('Nur Administratoren können Rezepte löschen.', 'danger')
-        return redirect(url_for('wein_verwalten'))
+        return redirect(url_for('verwalte_essen'))
     
     # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
     if essen.delete_essen(essen_id):
