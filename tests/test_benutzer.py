@@ -1,11 +1,9 @@
-from tests.conftest import auth_header
+from tests.conftest import auth_header, login_als
 
 
 class TestBenutzerHTML:
     def _login_als_admin(self, client):
-        with client.session_transaction() as sess:
-            sess["user_email"] = "admin@test.de"
-            sess["user_role"] = "admin"
+        login_als(client, "admin@test.de", "admin123")
 
     def test_benutzer_verwaltung_kein_zugriff_als_gast(self, client):
         resp = client.get("/benutzer", follow_redirects=True)

@@ -1,7 +1,9 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_jwt_extended import jwt_required
 
 from app.extensions import db
 from app.models.benutzer import Benutzer
+from app.utils import jwt_rolle
 
 bp = Blueprint("benutzer", __name__)
 
@@ -9,8 +11,9 @@ ERLAUBTE_ROLLEN = {"gast", "benutzer", "admin"}
 
 
 @bp.route("/benutzer", methods=["GET", "POST"])
+@jwt_required(optional=True)
 def verwalte_benutzer():
-    role = session.get("user_role", "gast")
+    role = jwt_rolle()
     if role != "admin":
         flash("Zugriff verweigert: Nur Administratoren dürfen Benutzer verwalten.", "danger")
         return redirect(url_for("main.home"))
@@ -36,8 +39,9 @@ def verwalte_benutzer():
 
 
 @bp.route("/benutzer/rolle_aendern/<int:user_id>", methods=["POST"])
+@jwt_required(optional=True)
 def rolle_update(user_id):
-    if session.get("user_role") != "admin":
+    if jwt_rolle() != "admin":
         flash("Nicht autorisiert.", "danger")
         return redirect(url_for("main.home"))
 

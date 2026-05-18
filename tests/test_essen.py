@@ -1,16 +1,12 @@
-from tests.conftest import auth_header
+from tests.conftest import auth_header, login_als
 
 
 class TestEssenHTML:
     def _login_als_benutzer(self, client):
-        with client.session_transaction() as sess:
-            sess["user_email"] = "benutzer@test.de"
-            sess["user_role"] = "benutzer"
+        login_als(client, "benutzer@test.de", "benutzer123")
 
     def _login_als_admin(self, client):
-        with client.session_transaction() as sess:
-            sess["user_email"] = "admin@test.de"
-            sess["user_role"] = "admin"
+        login_als(client, "admin@test.de", "admin123")
 
     def test_essen_liste_gast_redirect(self, client):
         resp = client.get("/essen", follow_redirects=True)

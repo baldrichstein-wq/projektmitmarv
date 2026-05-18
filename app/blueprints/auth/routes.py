@@ -1,4 +1,12 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_jwt_extended import (
+    create_access_token,
+    get_jwt,
+    get_jwt_identity,
+    jwt_required,
+    set_access_cookies,
+    unset_jwt_cookies,
+)
 
 from app.extensions import db
 from app.models.benutzer import Benutzer
@@ -6,7 +14,17 @@ from app.models.benutzer import Benutzer
 bp = Blueprint("auth", __name__)
 
 
+def _aktuelle_rolle() -> str:
+    """Gibt die Rolle aus dem JWT-Cookie zurück (oder 'gast' wenn nicht angemeldet)."""
+    try:
+        # get_jwt() wirft, wenn kein gültiger Token vorhanden ist
+        return get_jwt().get("rolle", "gast")
+    except Exception:
+        return "gast"
+
+
 @bp.route("/anmeldung", methods=["GET", "POST"])
+@jwt_required(optional=True)
 def anmeldung():
     if request.method == "POST":
         email = request.form.get("email", "").strip()
@@ -14,17 +32,19 @@ def anmeldung():
 
         user = Benutzer.query.filter_by(email=email).first()
         if user and user.check_password(password):
-            session["user_email"] = user.email
-            session["user_name"] = user.name
-            session["user_role"] = user.rolle
+            additional_claims = {"rolle": user.rolle, "name": user.name}
+            access_token = create_access_token(identity=user.email, additional_claims=additional_claims)
+            resp = redirect(url_for("main.home"))
+            set_access_cookies(resp, access_token)
             flash(f"Willkommen {user.name}!", "success")
-            return redirect(url_for("main.home"))
+            return resp
         flash("Ungültige Anmeldedaten.", "danger")
 
-    return render_template("auth/anmeldung.html", role=session.get("user_role", "gast"))
+    return render_template("auth/anmeldung.html", role=_aktuelle_rolle())
 
 
 @bp.route("/registrierung", methods=["GET", "POST"])
+@jwt_required(optional=True)
 def registrierung():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
@@ -47,11 +67,13 @@ def registrierung():
         flash("Registrierung erfolgreich! Du kannst dich jetzt anmelden.", "success")
         return redirect(url_for("auth.anmeldung"))
 
-    return render_template("auth/registrierung.html", role=session.get("user_role", "gast"))
+    return render_template("auth/registrierung.html", role=_aktuelle_rolle())
 
 
 @bp.route("/abmeldung")
+@jwt_required(optional=True)
 def abmeldung():
-    session.clear()
+    resp = redirect(url_for("main.home"))
+    unset_jwt_cookies(resp)
     flash("Erfolgreich abgemeldet.", "success")
-    return redirect(url_for("main.home"))
+    return resp

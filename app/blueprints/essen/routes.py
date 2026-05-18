@@ -1,14 +1,17 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_jwt_extended import jwt_required
 
 from app.extensions import db
 from app.models.essen import Essen
+from app.utils import jwt_rolle
 
 bp = Blueprint("essen", __name__)
 
 
 @bp.route("/essen", methods=["GET", "POST"])
+@jwt_required(optional=True)
 def verwalte_essen():
-    role = session.get("user_role", "gast")
+    role = jwt_rolle()
     if role == "gast":
         flash("Bitte melden Sie sich an.", "danger")
         return redirect(url_for("auth.anmeldung"))
@@ -39,8 +42,9 @@ def verwalte_essen():
 
 
 @bp.route("/essen/bearbeiten/<int:essen_id>", methods=["GET", "POST"])
+@jwt_required(optional=True)
 def bearbeite_essen(essen_id):
-    role = session.get("user_role", "gast")
+    role = jwt_rolle()
     if role == "gast":
         flash("Bitte melde dich an.", "danger")
         return redirect(url_for("auth.anmeldung"))
@@ -64,8 +68,9 @@ def bearbeite_essen(essen_id):
 
 
 @bp.route("/essen/loeschen/<int:essen_id>", methods=["POST"])
+@jwt_required(optional=True)
 def loesche_essen(essen_id):
-    if session.get("user_role") != "admin":
+    if jwt_rolle() != "admin":
         flash("Nur Administratoren können Rezepte löschen.", "danger")
         return redirect(url_for("essen.verwalte_essen"))
 

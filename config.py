@@ -21,6 +21,13 @@ class Config:
     SQLALCHEMY_DATABASE_URI: str = _resolve_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
 
+    # JWT Cookie-Einstellungen (WebUI)
+    JWT_TOKEN_LOCATION: list = ["headers", "cookies"]
+    JWT_COOKIE_SECURE: bool = False  # In Produktion auf True setzen
+    JWT_COOKIE_CSRF_PROTECT: bool = False  # In Produktion auf True setzen
+    JWT_ACCESS_COOKIE_NAME: str = "access_token_cookie"
+    JWT_REFRESH_COOKIE_NAME: str = "refresh_token_cookie"
+
     # flask-smorest / OpenAPI
     API_TITLE: str = "Rezeptbuch API"
     API_VERSION: str = "v1"

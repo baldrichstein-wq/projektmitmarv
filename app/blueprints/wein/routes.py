@@ -1,14 +1,17 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_jwt_extended import jwt_required
 
 from app.extensions import db
 from app.models.wein import Wein
+from app.utils import jwt_rolle
 
 bp = Blueprint("wein", __name__)
 
 
 @bp.route("/wein", methods=["GET", "POST"])
+@jwt_required(optional=True)
 def wein_verwalten():
-    role = session.get("user_role", "gast")
+    role = jwt_rolle()
     if role not in ("benutzer", "admin"):
         flash("Bitte melde dich an, um Weine zu sehen.", "danger")
         return redirect(url_for("auth.anmeldung"))
@@ -41,8 +44,9 @@ def wein_verwalten():
 
 
 @bp.route("/wein_edit/<int:wine_id>", methods=["GET", "POST"])
+@jwt_required(optional=True)
 def update_wine(wine_id):
-    role = session.get("user_role", "gast")
+    role = jwt_rolle()
     if role not in ("benutzer", "admin"):
         flash("Nur Administratoren und Benutzer können Weine bearbeiten.", "danger")
         return redirect(url_for("wein.wein_verwalten"))
@@ -70,8 +74,9 @@ def update_wine(wine_id):
 
 
 @bp.route("/wein/loeschen/<int:wine_id>", methods=["POST"])
+@jwt_required(optional=True)
 def loesche_wein(wine_id):
-    if session.get("user_role") != "admin":
+    if jwt_rolle() != "admin":
         flash("Nur Administratoren können Weine löschen.", "danger")
         return redirect(url_for("wein.wein_verwalten"))
 

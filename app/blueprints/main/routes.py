@@ -1,29 +1,34 @@
 import re
 
-from flask import Blueprint, render_template, request, session
+from flask import Blueprint, render_template, request
+from flask_jwt_extended import jwt_required
 
 from app.models.essen import Essen
 from app.models.wein import Wein
+from app.utils import jwt_name, jwt_rolle
 
 bp = Blueprint("main", __name__)
 
 
 @bp.route("/")
+@jwt_required(optional=True)
 def home():
-    role = session.get("user_role", "gast")
-    name = session.get("user_name", "Gast")
+    role = jwt_rolle()
+    name = jwt_name()
     return render_template("main/index.html", name=name, role=role)
 
 
 @bp.route("/ueber-uns")
+@jwt_required(optional=True)
 def ueber_uns():
-    role = session.get("user_role", "gast")
+    role = jwt_rolle()
     return render_template("main/ueber-uns.html", role=role)
 
 
 @bp.route("/suche")
+@jwt_required(optional=True)
 def suche():
-    role = session.get("user_role", "gast")
+    role = jwt_rolle()
     query = request.args.get("q", "").strip().lower()
 
     gefundene_weine = []

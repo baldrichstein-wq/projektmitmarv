@@ -57,9 +57,7 @@ class TestRegistrierung:
 
 class TestAbmeldung:
     def test_abmeldung_redirect(self, client):
-        with client.session_transaction() as sess:
-            sess["user_email"] = "admin@test.de"
-            sess["user_role"] = "admin"
+        client.post("/anmeldung", data={"email": "admin@test.de", "password": "admin123"})
         resp = client.get("/abmeldung", follow_redirects=True)
         assert resp.status_code == 200
         assert "Erfolgreich abgemeldet" in resp.get_data(as_text=True)

@@ -63,6 +63,16 @@ def client(app, db):
     return app.test_client()
 
 
+def login_als(client, email: str, password: str):
+    """Meldet einen Benutzer über die WebUI an und setzt den JWT-Cookie."""
+    resp = client.post(
+        "/anmeldung",
+        data={"email": email, "password": password},
+        follow_redirects=True,
+    )
+    return resp
+
+
 @pytest.fixture(scope="function")
 def admin_token(client):
     resp = client.post("/api/v1/auth/login", json={"email": "admin@test.de", "password": "admin123"})
