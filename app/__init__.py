@@ -36,12 +36,23 @@ def _register_blueprints(app: Flask) -> None:
     from .blueprints.essen.routes import bp as essen_bp
     from .blueprints.wein.routes import bp as wein_bp
     from .blueprints.benutzer.routes import bp as benutzer_bp
+    from .blueprints.api.auth import bp as api_auth_bp
+    from .blueprints.api.essen import bp as api_essen_bp
+    from .blueprints.api.wein import bp as api_wein_bp
+    from .blueprints.api.benutzer import bp as api_benutzer_bp
 
+    # HTML-Blueprints
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(essen_bp)
     app.register_blueprint(wein_bp)
     app.register_blueprint(benutzer_bp)
+
+    # API-Blueprints (flask-smorest registriert Swagger automatisch)
+    api.register_blueprint(api_auth_bp)
+    api.register_blueprint(api_essen_bp)
+    api.register_blueprint(api_wein_bp)
+    api.register_blueprint(api_benutzer_bp)
 
 
 def _seed_datenbank() -> None:
