@@ -1,73 +1,94 @@
-Hallo @Channel - Zu eurer Information hier nochmals als Überblick!!!!
+# Projektanforderungen — Backend Sprint
 
-:rocket: Projektphase – Backend Team Sprint (3 Wochen)
-Ab nächster Woche startet unsere dreiwöchige Projektphase.
+> Originaltext der Aufgabenstellung (Sprint-Phase, 3 Wochen)
 
-:dart: Ziel
-Ihr entwickelt in Teams ein eigenständiges Backend-Projekt mit: • Datenbankanbindung • CRUD-Operationen • Python-Skript zur Interaktion mit der API • sinnvoller Projektstruktur • Versionsverwaltung über GitHub
-Das Ganze läuft als Mini-Agile-Simulation mit drei einwöchigen Sprints
+---
 
+## Ziel
 
+Entwicklung eines eigenständigen Backend-Projekts mit:
 
-:busts_in_silhouette: Teams • Gruppengröße: 3–5 Personen • Schickt mir bitte bis Montag eure Teamvorschläge • Ich behalte mir vor, die finale Teamzusammensetzung festzulegen abzuändern.
+- Datenbankanbindung
+- CRUD-Operationen
+- Python-Skript zur Interaktion mit der API
+- Sinnvoller Projektstruktur
+- Versionsverwaltung über GitHub
 
+Das Projekt läuft als **Mini-Agile-Simulation** mit drei einwöchigen Sprints.
 
+---
 
-:hammer_and_wrench: Technische Anforderungen (Pflicht)
-Euer Projekt muss: • Ein eigenes GitHub-Repository haben • Regelmäßige Commits aller Teammitglieder enthalten → Idealerweise jeden Tag ein Commit pro Person • Eine README.md enthalten mit: • Projektbeschreibung • API-Übersicht • Eine Tagesdokumentation eurer Arbeit • Eine Datenbankanbindung besitzen (z. B. SQLite) • CRUD-Operationen sinnvoll implementieren • Ein Python-Skript enthalten, das mit eurem Backend interagiert • Ein Login-System
+## Teams
 
+- Gruppengröße: 3–5 Personen
+- Teamvorschläge bis Montag einreichen
+- Die finale Teamzusammensetzung kann vom Lehrer abgeändert werden
 
+---
 
-:calendar: Ablauf – Agile Light Framework
-Wir arbeiten in 3 Sprints (je 1 Woche).
+## Technische Anforderungen (Pflicht)
 
-Montag (Sprint Planning)
-• Festlegen der Wochenziele
-• Aufteilung der Aufgaben
-• Grobe Architektur abstimmen
+| Anforderung | Status |
+|---|---|
+| Eigenes GitHub-Repository | OK |
+| Regelmäßige Commits aller Teammitglieder | OK |
+| README.md mit Projektbeschreibung und API-Übersicht | OK |
+| Tagesdokumentation der Arbeit | OK |
+| Datenbankanbindung (SQLite / PostgreSQL) | OK |
+| CRUD-Operationen sinnvoll implementiert | OK |
+| Python-Skript zur Backend-Interaktion | OK |
+| Login-System | OK |
 
-Täglich (Daily)
-• Kurze Abstimmung:
-• Was mache ich heute?
-• Gibt es Blocker?
+---
 
-Freitag (Review)
-• Reflexion:
-• Was wurde erreicht?
-• Was lief gut?
-• Was war schwierig?
-• Was nehmen wir mit in die nächste Woche?
+## Agiles Framework (3 Sprints je 1 Woche)
 
+### Montag — Sprint Planning
 
+- Wochenziele festlegen
+- Aufgaben aufteilen
+- Grobe Architektur abstimmen
 
-:bulb: Mögliche Projektideen
-Ihr dürft eigene Vorschläge machen.
-Hier ein paar Inspirationen:
-• :dagger_knife: RPG Dungeon Crawler Backend
-• :crossed_swords: Pokémon Battle Game API
-• :fried_egg: Rezepte-Sharing-Plattform
-• :speech_balloon: Messenger-App
-• :globe_with_meridians: Mini-Social-Media-Plattform
+### Täglich — Daily Standup
 
-Wichtig: Das Projekt muss genug Substanz haben, um drei Wochen sinnvoll zu füllen.
+- Was mache ich heute?
+- Gibt es Blocker?
 
+### Freitag — Sprint Review
 
+- Was wurde erreicht?
+- Was lief gut / was war schwierig?
+- Was nehmen wir in die nächste Woche mit?
 
-:microphone: Abschlusspräsentationen am 22.05.2026 - (VORPRÄSENTATION / GENERALPROBE am 20.05.2026 in kleiner Runde)
-Am Ende präsentiert jedes Team (10–15 Minuten):
-• Projektidee
-• Teammitglieder & Rollen
-• Architekturüberblick
-• Live-Demo (wenn möglich)
-• Herausforderungen
-• Lessons Learned
+---
 
+## Projektideen (Auswahl)
 
+- RPG Dungeon Crawler Backend
+- Pokemon Battle Game API
+- **Rezepte-Sharing-Plattform** (unser Projekt)
+- Messenger-App
+- Mini-Social-Media-Plattform
 
-:earth_africa: Optional (für Ambitionierte)
-Wer möchte, kann sein Projekt am Ende:
-• deployen
-• öffentlich hosten
-Das ist kein Muss, aber eine gute Zusatzleistung.
+---
 
-Bis dahin viel ERFOLG UND GUTE IDEEN!!!! (bearbeitet)
+## Abschlusspräsentation
+
+| Termin | Details |
+|---|---|
+| Generalprobe | 20.05.2026 (kleine Runde) |
+| Abschlusspräsentation | 22.05.2026, 10-15 Minuten pro Team |
+
+### Inhalt der Präsentation
+
+1. Projektidee vorstellen
+2. Teammitglieder und Rollen
+3. Architekturüberblick
+4. Live-Demo (wenn möglich)
+5. Herausforderungen und Lessons Learned
+
+---
+
+## Optional
+
+- Projekt deployen / öffentlich hosten
