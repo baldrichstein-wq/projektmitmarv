@@ -219,6 +219,60 @@ def verwalte_essen():
     speisen_liste = essen.get_all_essen()
     return render_template('essen.html', essen=speisen_liste, role=role)
 
+@app.route('/essen/bearbeiten/<int:essen_id>', methods=['GET', 'POST'])
+def bearbeite_essen(essen_id):
+    role = session.get('user_role', 'gast')
+    if role == 'gast':
+        flash('Bitte melde dich an.', 'danger')
+        return redirect(url_for('anmeldung'))
+
+    aktuelles_essen = essen.get_essen(essen_id)
+    if not aktuelles_essen:
+        flash('Rezept nicht gefunden.', 'danger')
+        return redirect(url_for('verwalte_essen'))
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        personen = int(request.form.get('personenanzahl') or 1)
+        zutaten = request.form.get('ingredients', '').split(',')
+        desc = request.form.get('description', '').strip()
+        anw = request.form.get('kochanweisung', '').strip()
+        zeit = int(request.form.get('Kochzeit') or 0)
+
+        essen.update_essen(essen_id, name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
+        flash(f'Rezept "{name}" wurde aktualisiert.', 'success')
+        return redirect(url_for('verwalte_essen'))
+
+    return render_template('essen_bearbeiten.html', essen=aktuelles_essen, role=role)
+
+def get_essen(essen_id):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, name, personenanzahl, ingredients, description, kochanweisung, kochzeit FROM essen WHERE id = ?', (essen_id,))
+        row = cursor.fetchone()
+    if row:
+        return {
+            'id': row[0],
+            'name': row[1],
+            'personenanzahl': row[2],
+            'ingredients': json.loads(row[3]),
+            'description': row[4],
+            'kochanweisung': row[5],
+            'kochzeit': row[6],
+        }
+    return None
+
+def update_essen(essen_id, name, personenanzahl, ingredients, description, kochanweisung, kochzeit):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE essen
+            SET name = ?, personenanzahl = ?, ingredients = ?, description = ?, kochanweisung = ?, kochzeit = ?
+            WHERE id = ?
+        ''', (name, personenanzahl, json.dumps(ingredients), description, kochanweisung, kochzeit, essen_id))
+        conn.commit()
+        return cursor.rowcount > 0
+    
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')

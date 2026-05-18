@@ -95,8 +95,8 @@
                         <input type="number" class="form-control" id="personenanzahl" name="personenanzahl" min="1" required>
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="kochzeit" class="form-label">Zeit (h)</label>
-                        <input type="number" class="form-control" id="kochzeit" name="kochzeit" min="0">
+                        <label for="kochzeit" class="form-label">Zeit (Minuten)</label>
+                        <input type="number" class="form-control" id="kochzeit" name="kochzeit" min="0" value="0">
                     </div>
                 </div>
                 <div class="mb-3">
@@ -108,8 +108,8 @@
                     <textarea class="form-control" id="description" name="description" rows="2" required></textarea>
                 </div>
                 <div class="mb-3">
-                    <label for="cooking_instructions" class="form-label">Zubereitungsschritte</label>
-                    <textarea class="form-control" id="cooking_instructions" name="cooking_instructions" rows="3"></textarea>
+                    <label for="kochanweisung" class="form-label">Zubereitungsschritte</label>
+                    <textarea class="form-control" id="kochanweisung" name="kochanweisung" rows="3"></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Speichern</button>
             </form>
@@ -125,25 +125,27 @@
                     <thead>
                         <tr>
                             <th>Name</th>
+                            <th>Personen</th>
                             <th>Kochzeit</th>
                             <th>Beschreibung</th>
                             <th class="text-end">Aktion</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for essen in essens %}
+                        {% for e in essen %}
                         <tr>
-                            <td><strong>{{ essen.name }}</strong></td>
-                            <td>{{ essen.kochzeit }} Minuten</td>
-                            <td>{{ essen.description }}</td>
+                            <td><strong>{{ e.name }}</strong></td>
+                            <td>{{ e.personenanzahl }}</td>
+                            <td>{{ e.kochzeit }} Minuten</td>
+                            <td>{{ e.description }}</td>
                             <td class="text-end">
                                 {% if role == 'admin' %}
-                                <form method="post" action="{{ url_for('loesche_essen', essen_id=essen.id, role=role) }}" style="display:inline;">
+                                <form method="post" action="{{ url_for('loesche_essen', essen_id=e.id) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                                 </form>
                                 {% endif %}
                                 {% if role in ['user', 'admin'] %}
-                                    <a href="#" class="btn btn-warning btn-sm">Bearbeiten</a>
+                                    <a href="{{ url_for('bearbeite_essen', essen_id=e.id) }}" class="btn btn-warning btn-sm">Bearbeiten</a>
                                 {% else %}
                                     <span class="text-muted">Keine Rechte</span>
                                 {% endif %}
