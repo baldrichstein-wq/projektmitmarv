@@ -2,6 +2,7 @@ import re
 
 from app.models.essen import Essen
 from app.models.wein import Wein
+from app.extensions import db
 
 def skaliere_zutaten(zutaten_liste, original_menge, ziel_menge):
     """
@@ -27,7 +28,7 @@ def skaliere_zutaten(zutaten_liste, original_menge, ziel_menge):
     return skalierte_liste
 
 def berechne_essen_rezept(essen_id, ziel_personen):
-    rezept = Essen.query.get(essen_id)
+    rezept = db.session.get(Essen, essen_id)
     if not rezept:
         print("Essen-Rezept nicht gefunden.")
         return
@@ -41,7 +42,7 @@ def berechne_essen_rezept(essen_id, ziel_personen):
         print(f"• {zutat}")
 
 def berechne_wein_rezept(wine_id, ziel_liter):
-    rezept = Wein.query.get(wine_id)
+    rezept = db.session.get(Wein, wine_id)
     if not rezept:
         print("Wein-Rezept nicht gefunden.")
         return

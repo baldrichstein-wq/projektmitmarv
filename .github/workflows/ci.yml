@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Run ruff
+        run: |
+          ruff check .
+
+  test:
+    name: Tests and smoke start
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12]
+    env:
+      FLASK_ENV: testing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Smoke test - start app and check root
+        run: |
+          set -euo pipefail
+          python run.py & echo $! > server.pid
+          for i in {1..30}; do
+            if curl -sS -o /dev/null -f http://127.0.0.1:5000/; then
+              echo "Application responded"
+              break
+            fi
+            sleep 1
+          done
+          if ! curl -sS -o /dev/null -f http://127.0.0.1:5000/; then
+            echo "Application did not start within timeout" >&2
+            kill $(cat server.pid) || true
+            exit 1
+          fi
+          kill $(cat server.pid) || true

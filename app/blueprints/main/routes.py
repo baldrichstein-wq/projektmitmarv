@@ -1,4 +1,3 @@
-import re
 
 from flask import Blueprint, render_template, request
 from flask_jwt_extended import jwt_required

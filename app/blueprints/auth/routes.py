@@ -2,7 +2,6 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_jwt_extended import (
     create_access_token,
     get_jwt,
-    get_jwt_identity,
     jwt_required,
     set_access_cookies,
     unset_jwt_cookies,

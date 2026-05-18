@@ -3,6 +3,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token, get_jw
 from flask_smorest import Blueprint, abort
 
 from app.models.benutzer import Benutzer
+from app.extensions import db
 from app.schemas.benutzer import LoginSchema, TokenSchema
 
 bp = Blueprint("api_auth", __name__, url_prefix="/api/v1/auth", description="Authentifizierung")
@@ -31,7 +32,9 @@ class Refresh(MethodView):
     def post(self):
         """Access-Token mit Refresh-Token erneuern"""
         benutzer_id = get_jwt_identity()
-        benutzer = Benutzer.query.get_or_404(int(benutzer_id))
+        benutzer = db.session.get(Benutzer, int(benutzer_id)) if benutzer_id is not None else None
+        if not benutzer:
+            abort(404, message="Benutzer nicht gefunden.")
         zusatz_claims = {"rolle": benutzer.rolle, "name": benutzer.name}
         access_token = create_access_token(identity=str(benutzer_id), additional_claims=zusatz_claims)
         return {"access_token": access_token}

@@ -50,7 +50,11 @@ def rolle_update(user_id):
         flash("Ungültige Rolle.", "danger")
         return redirect(url_for("benutzer.verwalte_benutzer"))
 
-    benutzer = Benutzer.query.get_or_404(user_id)
+    benutzer = db.session.get(Benutzer, user_id)
+    if not benutzer:
+        flash("Benutzer nicht gefunden.", "danger")
+        return redirect(url_for("benutzer.verwalte_benutzer"))
+
     benutzer.rolle = neue_rolle
     db.session.commit()
     flash(f"Rolle für {benutzer.name} wurde auf {neue_rolle} aktualisiert.", "success")

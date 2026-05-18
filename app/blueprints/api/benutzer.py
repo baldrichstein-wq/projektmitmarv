@@ -33,7 +33,9 @@ class BenutzerRolle(MethodView):
     def put(self, daten, benutzer_id):
         """Rolle eines Benutzers ändern (nur Admin)"""
         _require_admin()
-        benutzer = Benutzer.query.get_or_404(benutzer_id)
+        benutzer = db.session.get(Benutzer, benutzer_id)
+        if not benutzer:
+            abort(404, message="Benutzer nicht gefunden.")
         benutzer.rolle = daten["rolle"]
         db.session.commit()
         return benutzer

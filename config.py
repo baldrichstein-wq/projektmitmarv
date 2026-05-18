@@ -17,7 +17,7 @@ def _resolve_database_uri() -> str:
 
 class Config:
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-bitte-aendern")
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "jwt-secret-bitte-aendern")
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "wichtig-jwt-secret-bitte-aendern")
     SQLALCHEMY_DATABASE_URI: str = _resolve_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
 
@@ -46,7 +46,7 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI: str = "sqlite:///:memory:"
     WTF_CSRF_ENABLED: bool = False
     SECRET_KEY: str = "test-secret"
-    JWT_SECRET_KEY: str = "test-jwt-secret"
+    JWT_SECRET_KEY: str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # 32 Zeichen für JWT
 
 
 class ProductionConfig(Config):

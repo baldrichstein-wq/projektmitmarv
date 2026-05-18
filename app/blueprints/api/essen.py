@@ -37,7 +37,10 @@ class EssenDetail(MethodView):
     @bp.response(200, EssenSchema)
     def get(self, essen_id):
         """Einzelnes Essen-Rezept abrufen"""
-        return Essen.query.get_or_404(essen_id)
+        essen = db.session.get(Essen, essen_id)
+        if not essen:
+            abort(404, message="Essen nicht gefunden.")
+        return essen
 
     @jwt_required()
     @bp.arguments(EssenSchema)
@@ -47,7 +50,9 @@ class EssenDetail(MethodView):
         claims = get_jwt()
         if claims.get("rolle") not in ("benutzer", "admin"):
             abort(403, message="Keine Berechtigung.")
-        essen = Essen.query.get_or_404(essen_id)
+        essen = db.session.get(Essen, essen_id)
+        if not essen:
+            abort(404, message="Essen nicht gefunden.")
         for key, value in daten.items():
             setattr(essen, key, value)
         db.session.commit()
@@ -60,6 +65,8 @@ class EssenDetail(MethodView):
         claims = get_jwt()
         if claims.get("rolle") != "admin":
             abort(403, message="Nur Administratoren können Rezepte löschen.")
-        essen = Essen.query.get_or_404(essen_id)
+        essen = db.session.get(Essen, essen_id)
+        if not essen:
+            abort(404, message="Essen nicht gefunden.")
         db.session.delete(essen)
         db.session.commit()

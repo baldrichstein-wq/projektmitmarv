@@ -51,7 +51,10 @@ def update_wine(wine_id):
         flash("Nur Administratoren und Benutzer können Weine bearbeiten.", "danger")
         return redirect(url_for("wein.wein_verwalten"))
 
-    wein = Wein.query.get_or_404(wine_id)
+    wein = db.session.get(Wein, wine_id)
+    if not wein:
+        flash("Wein nicht gefunden.", "danger")
+        return redirect(url_for("wein.wein_verwalten"))
 
     if request.method == "POST":
         name = request.form.get("name", "").strip()
@@ -80,7 +83,10 @@ def loesche_wein(wine_id):
         flash("Nur Administratoren können Weine löschen.", "danger")
         return redirect(url_for("wein.wein_verwalten"))
 
-    wein = Wein.query.get_or_404(wine_id)
+    wein = db.session.get(Wein, wine_id)
+    if not wein:
+        flash("Wein nicht gefunden.", "danger")
+        return redirect(url_for("wein.wein_verwalten"))
     db.session.delete(wein)
     db.session.commit()
     flash("Wein wurde erfolgreich gelöscht.", "success")

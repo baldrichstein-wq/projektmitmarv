@@ -37,7 +37,10 @@ class WeinDetail(MethodView):
     @bp.response(200, WeinSchema)
     def get(self, wein_id):
         """Einzelnes Wein-Rezept abrufen"""
-        return Wein.query.get_or_404(wein_id)
+        wein = db.session.get(Wein, wein_id)
+        if not wein:
+            abort(404, message="Wein nicht gefunden.")
+        return wein
 
     @jwt_required()
     @bp.arguments(WeinSchema)
@@ -47,7 +50,9 @@ class WeinDetail(MethodView):
         claims = get_jwt()
         if claims.get("rolle") not in ("benutzer", "admin"):
             abort(403, message="Keine Berechtigung.")
-        wein = Wein.query.get_or_404(wein_id)
+        wein = db.session.get(Wein, wein_id)
+        if not wein:
+            abort(404, message="Wein nicht gefunden.")
         for key, value in daten.items():
             setattr(wein, key, value)
         db.session.commit()
@@ -60,6 +65,8 @@ class WeinDetail(MethodView):
         claims = get_jwt()
         if claims.get("rolle") != "admin":
             abort(403, message="Nur Administratoren können Wein-Rezepte löschen.")
-        wein = Wein.query.get_or_404(wein_id)
+        wein = db.session.get(Wein, wein_id)
+        if not wein:
+            abort(404, message="Wein nicht gefunden.")
         db.session.delete(wein)
         db.session.commit()

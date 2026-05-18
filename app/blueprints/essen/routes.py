@@ -49,7 +49,10 @@ def bearbeite_essen(essen_id):
         flash("Bitte melde dich an.", "danger")
         return redirect(url_for("auth.anmeldung"))
 
-    aktuelles_essen = Essen.query.get_or_404(essen_id)
+    aktuelles_essen = db.session.get(Essen, essen_id)
+    if not aktuelles_essen:
+        flash("Rezept nicht gefunden.", "danger")
+        return redirect(url_for("essen.verwalte_essen"))
 
     if request.method == "POST":
         aktuelles_essen.name = request.form.get("name", "").strip()
@@ -74,7 +77,10 @@ def loesche_essen(essen_id):
         flash("Nur Administratoren können Rezepte löschen.", "danger")
         return redirect(url_for("essen.verwalte_essen"))
 
-    essen = Essen.query.get_or_404(essen_id)
+    essen = db.session.get(Essen, essen_id)
+    if not essen:
+        flash("Rezept nicht gefunden.", "danger")
+        return redirect(url_for("essen.verwalte_essen"))
     db.session.delete(essen)
     db.session.commit()
     flash("Rezept wurde erfolgreich gelöscht.", "success")
