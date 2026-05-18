@@ -243,7 +243,7 @@ def bearbeite_essen(essen_id):
         flash(f'Rezept "{name}" wurde aktualisiert.', 'success')
         return redirect(url_for('verwalte_essen'))
 
-    return render_template('essen_bearbeiten.html', essen=aktuelles_essen, role=role)
+    return render_template('essen_edit.html', essen=aktuelles_essen, role=role)
 
 def get_essen(essen_id):
     with sqlite3.connect(DB_FILE) as conn:
