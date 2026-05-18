@@ -31,8 +31,17 @@ def create_app(config_name: str | None = None) -> Flask:
 
 
 def _register_blueprints(app: Flask) -> None:
-    # Blueprints werden schrittweise in Commit 3 & 4 registriert
-    pass
+    from .blueprints.main.routes import bp as main_bp
+    from .blueprints.auth.routes import bp as auth_bp
+    from .blueprints.essen.routes import bp as essen_bp
+    from .blueprints.wein.routes import bp as wein_bp
+    from .blueprints.benutzer.routes import bp as benutzer_bp
+
+    app.register_blueprint(main_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(essen_bp)
+    app.register_blueprint(wein_bp)
+    app.register_blueprint(benutzer_bp)
 
 
 def _seed_datenbank() -> None:
