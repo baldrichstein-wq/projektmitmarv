@@ -22,6 +22,8 @@ def create_app(config_name: str | None = None) -> Flask:
     _register_blueprints(app)
 
     with app.app_context():
+        # Modelle importieren damit db.create_all() alle Tabellen kennt
+        from .models import Benutzer, Essen, Wein  # noqa: F401
         db.create_all()
         _seed_datenbank()
 
@@ -34,5 +36,71 @@ def _register_blueprints(app: Flask) -> None:
 
 
 def _seed_datenbank() -> None:
-    # Seed-Daten werden in Commit 2 nach Erstellung der Modelle hinzugefügt
-    pass
+    from .models.benutzer import Benutzer
+    from .models.essen import Essen
+    from .models.wein import Wein
+
+    # Nur seeden wenn die DB leer ist
+    if Benutzer.query.count() == 0:
+        admin = Benutzer(name="Admin", email="admin@rezepte.de", rolle="admin")
+        admin.set_password("admin123")
+        benutzer = Benutzer(name="Benutzer", email="benutzer@rezepte.de", rolle="benutzer")
+        benutzer.set_password("benutzer123")
+        db.session.add_all([admin, benutzer])
+
+    if Essen.query.count() == 0:
+        beispiel_essen = Essen(
+            name="Kaiserliches Kräuter-Kaninchen mit Rosmarin",
+            personenanzahl=4,
+            zutaten=[
+                "0,5 kg Kaninchen",
+                "4 Zweige frischer Rosmarin",
+                "2 Zweige Thymian",
+                "1 Zehe Knoblauch (zerdrückt)",
+                "Salz & Pfeffer",
+                "etwas Butter oder Olivenöl",
+                "Bräter",
+            ],
+            beschreibung=(
+                "Ein köstliches Gericht, das die Aromen von frischen Kräutern und zartem "
+                "Kaninchen vereint. Perfekt für ein festliches Mahl oder einen besonderen Anlass."
+            ),
+            kochanweisung=(
+                "Das Fleisch mit Salz, Pfeffer und dem zerdrückten Knoblauch kräftig einmassieren. "
+                "Die Kräuter fein hacken und unter die Gewürzmischung rühren. Das Kaninchen damit "
+                "bestreichen und mindestens 2 Stunden ziehen lassen. Bei mittlerer Hitze im Ofen "
+                "goldbraun braten, bis es nach Sieg riecht!"
+            ),
+            kochzeit=120,
+        )
+        db.session.add(beispiel_essen)
+
+    if Wein.query.count() == 0:
+        beispiel_wein = Wein(
+            name="Holunder Johannisbeer Wein",
+            liter=5.0,
+            zutaten=[
+                "1 Pack Weinhefe Sorte Portwein",
+                "500g Johannisbeeren Schwarz",
+                "1000g Holunderbeeren",
+                "1800g Zucker",
+                "Wasser bis 5l Ansatz erreicht",
+                "Starsan für Desinfektion von Brauutensilien",
+                "5g Hefenährsalz",
+                "Gärbehälter mit Gärstopfen",
+                "Dampfentsafter",
+            ],
+            beschreibung=(
+                "Ein sehr kräftiger Wein mit eigenwilligem Geschmack, bei dem Holunder und "
+                "Johannisbeere zusammenwirken."
+            ),
+            brauanweisung=(
+                "Alle Utensilien sauber vorbereiten, Früchte entsaften, Zucker und Hefe "
+                "einrühren und in einem sauberen Gärbehälter gären lassen."
+            ),
+            brauzeit=8,
+            alkoholgehalt=15.0,
+        )
+        db.session.add(beispiel_wein)
+
+    db.session.commit()
