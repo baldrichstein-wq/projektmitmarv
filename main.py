@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import os
 import re
+import sqlite3
+import json
 import benutzer
 import wine
 import essen

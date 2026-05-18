@@ -1,0 +1,21 @@
+{
+  "name": "Flask (Python) Devcontainer",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "settings": {
+    "python.analysis.extraPaths": ["./"],
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-azuretools.vscode-docker",
+    "wholroyd.jinja",
+    "LittleFoxTeam.vscode-python-test-adapter"
+  ],
+  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt",
+  "forwardPorts": [5000],
+  "remoteUser": "vscode"
+}
