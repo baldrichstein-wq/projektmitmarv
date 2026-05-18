@@ -124,15 +124,18 @@ def update_wine(wine_id):
     if request.method == 'POST':
         name = request.form.get('name')
         liter = request.form.get('liter', '5')
-        ingredients = request.form.get('ingredients').split(',')
+        ingredients = request.form.get('ingredients', '').split(',')
         description = request.form.get('description')
         instructions = request.form.get('brewing_instructions')
         time = request.form.get('brewing_time')
         alcohol = request.form.get('alcohol_content')
 
         wine.update_wine(wine_id, name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
-        flash(f'Wein "{name}" wurde aktualisiert!', 'success')
-        return redirect(url_for('wein_verwalten'))
+        if name == None: 
+            return print("Fehler: Name ist None")
+        else:
+            flash(f'Wein "{name}" wurde aktualisiert!', 'success')
+            return redirect(url_for('wein_verwalten'))
 
     wine_data = wine.get_wine_by_id(wine_id)
     return render_template('wein_edit.html', wine=wine_data, role=role)
