@@ -134,7 +134,10 @@
                                 </form>
                                 {% endif %}
                                 {% if role in ['user', 'admin'] %}
-                                <a href="#" class="btn btn-warning btn-sm">Bearbeiten</a>
+                                    <form method="post" action="{{ url_for('update_wine', wine_id=wine.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm">Bearbeiten</button>
+                                </form>
+                                </a>
                                 {% endif %}
                             </td>
                         </tr>
