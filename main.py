@@ -114,10 +114,33 @@ def registrierung():
 
     return render_template('registrierung.html', role=session.get('user_role', 'gast'))
 
+@app.route('/wein_edit/<int:wine_id>', methods=['GET', 'POST'])
+def update_wine(wine_id):
+    role = session.get('user_role', 'gast')
+    if role != 'benutzer' and role != 'admin':
+        flash('Nur Administratoren und Benutzer können Weine bearbeiten.', 'danger')
+        return redirect(url_for('wein_verwalten'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        liter = request.form.get('liter', '5')
+        ingredients = request.form.get('ingredients').split(',')
+        description = request.form.get('description')
+        instructions = request.form.get('brewing_instructions')
+        time = request.form.get('brewing_time')
+        alcohol = request.form.get('alcohol_content')
+
+        wine.update_wine(wine_id, name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
+        flash(f'Wein "{name}" wurde aktualisiert!', 'success')
+        return redirect(url_for('wein_verwalten'))
+
+    wine_data = wine.get_wine_by_id(wine_id)
+    return render_template('wein_edit.html', wine=wine_data, role=role)
+
 @app.route('/wein', methods=['GET', 'POST'])
 def wein_verwalten():
     role = session.get('user_role', 'gast')
-    if role == 'gast':
+    if role != 'benutzer' and role != 'admin':
         flash('Bitte melde dich an, um Weine zu sehen.', 'danger')
         return redirect(url_for('anmeldung'))
 
@@ -195,7 +218,7 @@ def loesche_essen(essen_id):
         return redirect(url_for('wein_verwalten'))
     
     # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
-    if wine.delete_wine(wine_id):
+    if essen.delete_essen(essen_id):
         flash('Rezept wurde erfolgreich gelöscht.', 'success')
     else:
         flash('Fehler beim Löschen des Rezepts.', 'danger')
