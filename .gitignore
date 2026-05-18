@@ -38,5 +38,6 @@ venv.bak/
 .pytype/
 
 # Database files (SQLite) - ignore DB files and backup/journal variants
+*.db
 *.db-*
 
