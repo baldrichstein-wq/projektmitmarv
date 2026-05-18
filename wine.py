@@ -94,7 +94,7 @@ def get_all_wines():
         })
     return wines
 
-def get_wine(wine_id):
+def get_wine_by_id(wine_id):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('SELECT id, name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content FROM wines WHERE id = ?', (wine_id,))

@@ -18,7 +18,7 @@ PREDEFINED_Essen = {
     ],
     'description': 'Ein köstliches Gericht, das die Aromen von frischen Kräutern und zartem Kaninchen vereint. Perfekt für ein festliches Mahl oder einen besonderen Anlass.',
     'kochanweisung': 'Das Fleisch mit Salz, Pfeffer und dem zerdrückten Knoblauch kräftig einmassieren. Die Kräuter fein hacken und unter die Gewürzmischung rühren. Das Kaninchen damit bestreichen und mindestens 2 Stunden ziehen lassen. Bei mittlerer Hitze im Ofen goldbraun braten, bis es nach Sieg riecht!',
-    'Kochzeit': 126, # In Minuten angegeben (2 Stunden)
+    'Kochzeit': 120, # In Minuten angegeben (2 Stunden)
 }
 
 def format_kochzeit(minuten_gesamt):
