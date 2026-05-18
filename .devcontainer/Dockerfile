@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libsqlite3-dev \
+    && apt-get install -y --no-install-recommends build-essential libsqlite3-dev git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
