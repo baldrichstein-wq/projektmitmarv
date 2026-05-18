@@ -1,6 +1,7 @@
-import essen
-import wine
 import re
+
+from app.models.essen import Essen
+from app.models.wein import Wein
 
 def skaliere_zutaten(zutaten_liste, original_menge, ziel_menge):
     """
@@ -26,21 +27,21 @@ def skaliere_zutaten(zutaten_liste, original_menge, ziel_menge):
     return skalierte_liste
 
 def berechne_essen_rezept(essen_id, ziel_personen):
-    rezept = essen.get_essen(essen_id)
+    rezept = Essen.query.get(essen_id)
     if not rezept:
         print("Essen-Rezept nicht gefunden.")
         return
 
-    print(f"\n--- Skaliertes Rezept: {rezept['name']} ---")
-    print(f"Basis: {rezept['personenanzahl']} Personen -> Ziel: {ziel_personen} Personen")
+    print(f"--- Skaliertes Rezept: {rezept.name} ---")
+    print(f"Basis: {rezept.personenanzahl} Personen -> Ziel: {ziel_personen} Personen")
     
-    neue_zutaten = skaliere_zutaten(rezept['ingredients'], rezept['personenanzahl'], ziel_personen)
+    neue_zutaten = skaliere_zutaten(rezept.zutaten, rezept.personenanzahl, ziel_personen)
     
     for zutat in neue_zutaten:
         print(f"• {zutat}")
 
 def berechne_wein_rezept(wine_id, ziel_liter):
-    rezept = wine.get_wine(wine_id)
+    rezept = Wein.query.get(wine_id)
     if not rezept:
         print("Wein-Rezept nicht gefunden.")
         return
@@ -49,20 +50,19 @@ def berechne_wein_rezept(wine_id, ziel_liter):
     # (laut deinem String "Wasser bis 5l ansatz erreicht")
     basis_liter = 5.0 
     
-    print(f"\n--- Skalierter Wein: {rezept['name']} ---")
+    print(f"--- Skalierter Wein: {rezept.name} ---")
     print(f"Basis: {basis_liter}L -> Ziel: {ziel_liter}L")
     
-    neue_zutaten = skaliere_zutaten(rezept['ingredients'], basis_liter, ziel_liter)
+    neue_zutaten = skaliere_zutaten(rezept.zutaten, basis_liter, ziel_liter)
     
     for zutat in neue_zutaten:
         print(f"• {zutat}")
 
 if __name__ == "__main__":
-    # Initialisiere DBs falls noch nicht geschehen
-    essen.init_db()
-    wine.init_db()
-
-    print("Willkommen beim Rezept-Rechner!")
+    from app import create_app
+    flask_app = create_app()
+    with flask_app.app_context():
+        print("Willkommen beim Rezept-Rechner!")
     
     # Beispiel-Abfrage für Essen
     essen_id = 1 # Kaiserliches Kräuter-Kaninchen
