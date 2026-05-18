@@ -13,6 +13,7 @@ app.secret_key = 'supersecretkey123'
 def skaliere_zutaten(zutaten_liste, original_menge, ziel_menge):
     if not original_menge or original_menge == 0:
         return zutaten_liste
+        
     try:
         faktor = float(ziel_menge) / float(original_menge)
     except (ValueError, ZeroDivisionError):
@@ -32,7 +33,6 @@ def skaliere_zutaten(zutaten_liste, original_menge, ziel_menge):
     return skalierte_liste
 
 # --- DATENBANK INITIALISIERUNG ---
-# Wird beim Serverstart ausgeführt und füttert die DBs mit euren vordefinierten Rezepten
 benutzer.init_db()
 wine.init_db()
 essen.init_db()
@@ -45,7 +45,7 @@ def home():
     role = session.get('user_role', 'gast')
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
-    
+
 @app.route('/ueber-uns')
 def ueber_uns():
     role = session.get('user_role', 'gast')
@@ -114,10 +114,42 @@ def registrierung():
 
     return render_template('registrierung.html', role=session.get('user_role', 'gast'))
 
+@app.route('/wein_edit/<int:wine_id>', methods=['GET', 'POST'])
+def update_wine(wine_id):
+    get_wine_by_id = wine.get_wine_by_id(wine_id)
+    if not get_wine_by_id:
+        flash('Wein nicht gefunden.', 'danger')
+        return redirect(url_for('wein_verwalten'))
+    
+    role = session.get('user_role', 'gast')
+    if role != 'benutzer' and role != 'admin':
+        flash('Nur Administratoren und Benutzer können Weine bearbeiten.', 'danger')
+        return redirect(url_for('wein_verwalten'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        liter = request.form.get('liter', '5')
+        ingredients = request.form.get('ingredients', '').split(',')
+        description = request.form.get('description')
+        instructions = request.form.get('brewing_instructions')
+        time = request.form.get('brewing_time')
+        alcohol = request.form.get('alcohol_content')
+
+        if not name:
+            flash('Fehler: Der Name des Weins darf nicht leer sein!', 'danger')
+            return redirect(url_for('update_wine', wine_id=wine_id))
+
+        wine.update_wine(wine_id, name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
+        flash(f'Wein "{name}" wurde aktualisiert!', 'success')
+        return redirect(url_for('wein_verwalten'))
+
+    wine_data = wine.get_wine_by_id(wine_id)
+    return render_template('wein_edit.html', wine=wine_data, role=role)
+
 @app.route('/wein', methods=['GET', 'POST'])
 def wein_verwalten():
     role = session.get('user_role', 'gast')
-    if role == 'gast':
+    if role != 'benutzer' and role != 'admin':
         flash('Bitte melde dich an, um Weine zu sehen.', 'danger')
         return redirect(url_for('anmeldung'))
 
@@ -127,32 +159,15 @@ def wein_verwalten():
         ingredients = request.form.get('ingredients').split(',')
         description = request.form.get('description')
         instructions = request.form.get('brewing_instructions')
+        time = request.form.get('brewing_time')
+        alcohol = request.form.get('alcohol_content')
 
-        
-        # Datenabsicherung für deine wine.py (add_wine)
-        try:
-            time = int(request.from.get('brewing_time', '0'))
-            alcohol = float(request.from.get('alcohol_content', '0'))
-        except ValueError:
-            flash('Fehler: Brauzeit muss eine Zahl und Alkoholgehalt eine Kommazahl sein!', 'danger')
-            return redirect(url_for('wine_verwalten'))
-
-        # Aufruf eurer originalen add_wine Funktion aus wine.py
-        wine.add_wine(
-            name, 
-            liter, 
-            [i.strip() for i in ingredients], 
-            description, 
-            instructions, 
-            time, 
-            alcohol
-        )
-        flash(f'Wein "{name}" erfolgreich zur Datenbank hinzugefügt!', 'success')
+        wine.add_wine(name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
+        flash(f'Wein "{name}" hinzugefügt!', 'success')
         return redirect(url_for('wein_verwalten'))
 
     weine = wine.get_all_wines()
     return render_template('wein.html', wines=weine, role=role)
-    
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
 def loesche_wein(wine_id):
     role = session.get('user_role', 'gast')
@@ -200,12 +215,64 @@ def verwalte_essen():
         essen.add_essen(name, int(personen), [z.strip() for z in zutaten], desc, anw, int(zeit))
         flash('Essen gespeichert.', 'success')
         return redirect(url_for('verwalte_essen'))
-    # 1. Alle Essen aus der Datenbank abrufen
+
     speisen_liste = essen.get_all_essen()
-    
-    # 2. Die Liste 'speisen_liste' unter dem Namen 'essen' an das HTML übergeben
     return render_template('essen.html', essen=speisen_liste, role=role)
 
+@app.route('/essen/bearbeiten/<int:essen_id>', methods=['GET', 'POST'])
+def bearbeite_essen(essen_id):
+    role = session.get('user_role', 'gast')
+    if role == 'gast':
+        flash('Bitte melde dich an.', 'danger')
+        return redirect(url_for('anmeldung'))
+
+    aktuelles_essen = essen.get_essen(essen_id)
+    if not aktuelles_essen:
+        flash('Rezept nicht gefunden.', 'danger')
+        return redirect(url_for('verwalte_essen'))
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        personen = int(request.form.get('personenanzahl') or 1)
+        zutaten = request.form.get('ingredients', '').split(',')
+        desc = request.form.get('description', '').strip()
+        anw = request.form.get('kochanweisung', '').strip()
+        zeit = int(request.form.get('Kochzeit') or 0)
+
+        essen.update_essen(essen_id, name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
+        flash(f'Rezept "{name}" wurde aktualisiert.', 'success')
+        return redirect(url_for('verwalte_essen'))
+
+    return render_template('essen_edit.html', essen=aktuelles_essen, role=role)
+
+def get_essen(essen_id):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, name, personenanzahl, ingredients, description, kochanweisung, kochzeit FROM essen WHERE id = ?', (essen_id,))
+        row = cursor.fetchone()
+    if row:
+        return {
+            'id': row[0],
+            'name': row[1],
+            'personenanzahl': row[2],
+            'ingredients': json.loads(row[3]),
+            'description': row[4],
+            'kochanweisung': row[5],
+            'kochzeit': row[6],
+        }
+    return None
+
+def update_essen(essen_id, name, personenanzahl, ingredients, description, kochanweisung, kochzeit):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE essen
+            SET name = ?, personenanzahl = ?, ingredients = ?, description = ?, kochanweisung = ?, kochzeit = ?
+            WHERE id = ?
+        ''', (name, personenanzahl, json.dumps(ingredients), description, kochanweisung, kochzeit, essen_id))
+        conn.commit()
+        return cursor.rowcount > 0
+    
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')
@@ -213,7 +280,7 @@ def loesche_essen(essen_id):
         flash('Nur Administratoren können Rezepte löschen.', 'danger')
         return redirect(url_for('verwalte_essen'))
     
-    # Hier wird die Lösch-Funktion aus deinem essen-Modul aufgerufen
+    # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
     if essen.delete_essen(essen_id):
         flash('Rezept wurde erfolgreich gelöscht.', 'success')
     else:
@@ -254,7 +321,5 @@ def suche():
                            speisen=gefundene_speisen, 
                            role=role)
 
-# --- PROGRAMMSTART (Ganz am Ende der Datei platziert) ---
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(debug=True)
