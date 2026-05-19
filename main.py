@@ -48,10 +48,6 @@ def home():
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
 
-#if __name__ == '__main__':
-#     port = int(os.environ.get('PORT', 5000))
-#     app.run(host='0.0.0.0' ,port=port, debug=True)
-
 
 
 @app.route('/ueber_uns')
@@ -346,4 +342,5 @@ def suche():
                            role=role)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+     port = int(os.environ.get('PORT', 5000))
+     app.run(host='0.0.0.0' ,port=port, debug=True)
