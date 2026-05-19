@@ -112,6 +112,7 @@
                                         <option value="admin" {% if user.rolle == 'admin' %}selected{% endif %}>Admin</option>
                                     </select>
                                     <button type="submit" class="btn btn-sm btn-outline-warning">Update</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-2" formaction="{{ url_for('benutzer_loeschen', user_id=user.id) }}" onclick="return confirm('Benutzer wirklich löschen?');">Löschen</button>
                                 </form>
                             </td>
                         </tr>
