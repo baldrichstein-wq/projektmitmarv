@@ -4,181 +4,139 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suche - Wein & Essen</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        body {
-            background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
-            background-attachment: fixed;
-            background-position: center;
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-color: #f4e3d7; 
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            color: #FDFD96; 
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
-            font-family: "Times New Roman", Times, serif;  
-            padding-top: 50px;
-            padding-bottom: 50px;
-        }
-        .card {
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #212529;
-            text-shadow: none;
-            margin-bottom: 20px;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .list-group-item {
-            background-color: transparent;
-        }
-        .calculator-box, .recipe-box {
-            background: #e9ecef;
-            border: 1px solid #ced4da;
-            padding: 15px;
-            margin-top: 10px;
-            border-radius: 5px;
-        }
-        .recipe-box {
-            background-color: #f8f9fa;
-            border-left: 5px solid #8B4513;
-        }
-        .btn-custom {
-            background-color: #8B4513;
-            color: white;
-        }
-        .btn-custom:hover {
-            background-color: #5D2E0A;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
+    {% from "_navbar.html" import render_navbar with context %}
+    {{ render_navbar('suche') }}
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('main.home') }}">Das Rezeptbuch</a>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Startseite</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.ueber_uns') }}">Über uns</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('benutzer.verwalte_benutzer') }}">Benutzer</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('wein.wein_verwalten') }}">Wein</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('essen.verwalte_essen') }}">Essen</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.suche') }}">Suche</a></li>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container">
+    <div class="container mt-5 mb-5 search-page">
         <h1 class="mb-4">Suche</h1>
-        
-        <form action="{{ url_for('main.suche') }}" method="get" class="mb-5">
-            <div class="input-group">
-                <input type="text" name="q" class="form-control" placeholder="Suche nach Name oder Zutat (z.B. Holunder, Mehl...)" value="{{ query }}">
-                <button class="btn btn-custom" type="submit">Suchen</button>
+
+        <div class="content-wrapper search-wrapper">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h2 class="mb-0">Rezeptbuch durchsuchen</h2>
+                </div>
+                <div class="card-body">
+                    <form action="/search" method="get">
+                        <div class="input-group input-group-lg">
+                            <input type="text" name="q" class="form-control" placeholder="Suche nach Name oder Zutat (z.B. Holunder, Mehl...)" value="{{ query }}">
+                            <button class="btn btn-custom" type="submit">Suchen</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
 
-        {% if query %}
-            <p class="lead">Ergebnisse für: <strong>{{ query }}</strong></p>
+            {% if query %}
+                <p class="lead mb-4 search-result-info">Ergebnisse für: <strong>{{ query }}</strong></p>
 
-            <h2 class="mt-4">Gefundene Weine</h2>
-            <div class="row">
-                {% for w in weine %}
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ w.name }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">{{ w.alkoholgehalt }}% Alk. | {{ w.liter }} Liter Basis</h6>
-                            <p class="card-text">{{ w.beschreibung }}</p>
-                            
-                            <h6>Zutaten:</h6>
-                            <ul class="list-group list-group-flush mb-3" id="list-wine-{{ w.id }}">
+                <!-- Gefundene Weine -->
+                <h2 class="mb-4">Gefundene Weine</h2>
+                <div class="row">
+                    {% for w in weine %}
+                    <div class="col-md-6 mb-4">
+                        <div class="search-card">
+                            <h5 class="mb-2">{{ w.name }}</h5>
+                            <h6>{{ w.alkoholgehalt }}% Alk. | {{ w.liter }} Liter Basis</h6>
+                            <p class="mt-3">{{ w.beschreibung }}</p>
+
+                            <h6 class="mt-3 mb-2">Zutaten:</h6>
+                            <ul class="list-unstyled small" id="list-wine-{{ w.id }}">
                                 {% for zutat in w.zutaten %}
-                                <li class="list-group-item" data-base-text="{{ zutat }}">{{ zutat }}</li>
+                                <li class="mb-1" data-base-text="{{ zutat }}">{{ zutat }}</li>
                                 {% endfor %}
                             </ul>
 
-                            <div class="d-flex gap-2 mb-3">
-                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleCalc('calc-wine-{{ w.id }}')">Menge umrechnen</button>
-                                <button class="btn btn-sm btn-custom" type="button" data-bs-toggle="collapse" data-bs-target="#recipe-wine-{{ w.id }}">
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <button class="btn btn-sm btn-outline-light" onclick="toggleCalc('calc-wine-{{ w.id }}')">Menge umrechnen</button>
+                                <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#recipe-wine-{{ w.id }}">
                                     Vollständiges Rezept
                                 </button>
                             </div>
 
-                            <div id="calc-wine-{{ w.id }}" class="calculator-box" style="display:none;">
-                                <label class="form-label">Zielmenge (Liter):</label>
-                                <input type="number" class="form-control mb-2" step="0.5" placeholder="z.B. 10" 
+                            <div id="calc-wine-{{ w.id }}" class="mt-3" style="display:none;">
+                                <label class="form-label small">Zielmenge (Liter):</label>
+                                <input type="number" class="form-control form-control-sm" step="0.5" placeholder="z.B. 10"
                                        oninput="calculate(this, {{ w.liter|replace(',', '.') }}, 'list-wine-{{ w.id }}')">
                             </div>
 
                             <div class="collapse mt-3" id="recipe-wine-{{ w.id }}">
                                 <div class="recipe-box">
-                                    <h6>Brauanweisung:</h6>
+                                    <h6 class="mb-2">Brauanweisung:</h6>
                                     <p>{{ w.brauanweisung }}</p>
-                                    <hr>
-                                    <p><strong>Gärzeit:</strong> ca. {{ w.brauzeit }} Wochen</p>
+                                    <hr class="my-2">
+                                    <p class="mb-0"><strong>Gärzeit:</strong> ca. {{ w.brauzeit }} Wochen</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    {% else %}
+                    <div class="col-md-6 mb-4">
+                        <div class="search-card search-card-empty">
+                            <h5 class="mb-2">Keine Weine gefunden</h5>
+                            <p class="mb-0">Versuchen Sie einen anderen Suchbegriff oder prüfen Sie die Schreibweise.</p>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% else %}
-                <p>Keine Weine gefunden.</p>
-                {% endfor %}
-            </div>
 
-            <h2 class="mt-5">Gefundene Speisen</h2>
-            <div class="row">
-                {% for e in speisen %}
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ e.name }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Für {{ e.personenanzahl }} Personen | {{ e.kochzeit }} Min.</h6>
-                            <p class="card-text">{{ e.beschreibung }}</p>
-                            
-                            <h6>Zutaten:</h6>
-                            <ul class="list-group list-group-flush mb-3" id="list-essen-{{ e.id }}">
+                <!-- Gefundene Speisen -->
+                <h2 class="mb-4 mt-5">Gefundene Speisen</h2>
+                <div class="row">
+                    {% for e in speisen %}
+                    <div class="col-md-6 mb-4">
+                        <div class="search-card">
+                            <h5 class="mb-2">{{ e.name }}</h5>
+                            <h6>Für {{ e.personenanzahl }} Personen | {{ e.kochzeit }} Min.</h6>
+                            <p class="mt-3">{{ e.beschreibung }}</p>
+
+                            <h6 class="mt-3 mb-2">Zutaten:</h6>
+                            <ul class="list-unstyled small" id="list-essen-{{ e.id }}">
                                 {% for zutat in e.zutaten %}
-                                <li class="list-group-item" data-base-text="{{ zutat }}">{{ zutat }}</li>
+                                <li class="mb-1" data-base-text="{{ zutat }}">{{ zutat }}</li>
                                 {% endfor %}
                             </ul>
 
-                            <div class="d-flex gap-2 mb-3">
-                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleCalc('calc-essen-{{ e.id }}')">Personen anpassen</button>
-                                <button class="btn btn-sm btn-custom" type="button" data-bs-toggle="collapse" data-bs-target="#recipe-essen-{{ e.id }}">
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <button class="btn btn-sm btn-outline-light" onclick="toggleCalc('calc-essen-{{ e.id }}')">Personen anpassen</button>
+                                <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#recipe-essen-{{ e.id }}">
                                     Vollständiges Rezept
                                 </button>
                             </div>
 
-                            <div id="calc-essen-{{ e.id }}" class="calculator-box" style="display:none;">
-                                <label class="form-label">Neue Personenanzahl:</label>
-                                <input type="number" class="form-control mb-2" step="1" placeholder="z.B. 8" 
+                            <div id="calc-essen-{{ e.id }}" class="mt-3" style="display:none;">
+                                <label class="form-label small">Neue Personenanzahl:</label>
+                                <input type="number" class="form-control form-control-sm" step="1" placeholder="z.B. 8"
                                        oninput="calculate(this, {{ e.personenanzahl }}, 'list-essen-{{ e.id }}')">
                             </div>
 
                             <div class="collapse mt-3" id="recipe-essen-{{ e.id }}">
                                 <div class="recipe-box">
-                                    <h6>Kochanweisung:</h6>
+                                    <h6 class="mb-2">Kochanweisung:</h6>
                                     <p>{{ e.kochanweisung }}</p>
-                                    <hr>
-                                    <p><strong>Gesamtzeit:</strong> {{ e.kochzeit }} Minuten</p>
+                                    <hr class="my-2">
+                                    <p class="mb-0"><strong>Gesamtzeit:</strong> {{ e.kochzeit }} Minuten</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    {% else %}
+                    <div class="col-md-6 mb-4">
+                        <div class="search-card search-card-empty">
+                            <h5 class="mb-2">Keine Speisen gefunden</h5>
+                            <p class="mb-0">Versuchen Sie einen anderen Suchbegriff oder prüfen Sie die Schreibweise.</p>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% else %}
-                <p>Keine Speisen gefunden.</p>
-                {% endfor %}
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         function toggleCalc(id) {

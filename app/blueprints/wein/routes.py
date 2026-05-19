@@ -8,18 +8,22 @@ from app.utils import jwt_rolle
 bp = Blueprint("wein", __name__)
 
 
-@bp.route("/wein", methods=["GET", "POST"])
+@bp.route("/wines", methods=["GET", "POST"])
 @jwt_required(optional=True)
 def wein_verwalten():
     role = jwt_rolle()
-    if role not in ("benutzer", "admin"):
+    if role not in ("user", "admin"):
         flash("Bitte melde dich an, um Weine zu sehen.", "danger")
         return redirect(url_for("auth.anmeldung"))
 
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         liter = float(request.form.get("liter", 5) or 5)
-        zutaten = [z.strip() for z in request.form.get("ingredients", "").split(",") if z.strip()]
+        zutaten = [
+            z.strip()
+            for z in request.form.get("ingredients", "").split(",")
+            if z.strip()
+        ]
         beschreibung = request.form.get("description", "").strip()
         brauanweisung = request.form.get("brewing_instructions", "").strip()
         brauzeit = int(request.form.get("brewing_time", 0) or 0)
@@ -43,11 +47,11 @@ def wein_verwalten():
     return render_template("wein/wein.html", wines=weine, role=role)
 
 
-@bp.route("/wein_edit/<int:wine_id>", methods=["GET", "POST"])
+@bp.route("/wines/<int:wine_id>/edit", methods=["GET", "POST"])
 @jwt_required(optional=True)
 def update_wine(wine_id):
     role = jwt_rolle()
-    if role not in ("benutzer", "admin"):
+    if role not in ("user", "admin"):
         flash("Nur Administratoren und Benutzer können Weine bearbeiten.", "danger")
         return redirect(url_for("wein.wein_verwalten"))
 
@@ -57,26 +61,63 @@ def update_wine(wine_id):
         return redirect(url_for("wein.wein_verwalten"))
 
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
+        form_data = {
+            "name": request.form.get("name", "").strip(),
+            "liter": request.form.get("liter", str(wein.liter)),
+            "ingredients": request.form.get("ingredients", ""),
+            "description": request.form.get("description", "").strip(),
+            "brewing_instructions": request.form.get(
+                "brewing_instructions", ""
+            ).strip(),
+            "brewing_time": request.form.get("brewing_time", str(wein.brauzeit)),
+            "alcohol_content": request.form.get(
+                "alcohol_content", str(wein.alkoholgehalt)
+            ),
+        }
+
+        name = form_data["name"]
         if not name:
-            flash("Fehler: Der Name des Weins darf nicht leer sein!", "danger")
-            return redirect(url_for("wein.update_wine", wine_id=wine_id))
+            return render_template(
+                "wein/wein_edit.html",
+                wine=wein,
+                role=role,
+                form_error="Der Name des Weins darf nicht leer sein.",
+                form_data=form_data,
+            )
+
+        def _parse_float(value: str, fallback: float) -> float:
+            try:
+                return float(str(value).replace(",", "."))
+            except (TypeError, ValueError):
+                return fallback
+
+        def _parse_int(value: str, fallback: int) -> int:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return fallback
 
         wein.name = name
-        wein.liter = float(request.form.get("liter", wein.liter) or wein.liter)
-        wein.zutaten = [z.strip() for z in request.form.get("ingredients", "").split(",") if z.strip()]
-        wein.beschreibung = request.form.get("description", "").strip()
-        wein.brauanweisung = request.form.get("brewing_instructions", "").strip()
-        wein.brauzeit = int(request.form.get("brewing_time", 0) or 0)
-        wein.alkoholgehalt = float(request.form.get("alcohol_content", 0) or 0)
+        wein.liter = _parse_float(form_data["liter"], wein.liter)
+        wein.zutaten = [
+            z.strip() for z in form_data["ingredients"].split(",") if z.strip()
+        ]
+        wein.beschreibung = form_data["description"]
+        wein.brauanweisung = form_data["brewing_instructions"]
+        wein.brauzeit = _parse_int(form_data["brewing_time"], wein.brauzeit)
+        wein.alkoholgehalt = _parse_float(
+            form_data["alcohol_content"], wein.alkoholgehalt
+        )
         db.session.commit()
         flash(f'Wein "{wein.name}" wurde aktualisiert!', "success")
         return redirect(url_for("wein.wein_verwalten"))
 
-    return render_template("wein/wein_edit.html", wine=wein, role=role)
+    return render_template(
+        "wein/wein_edit.html", wine=wein, role=role, form_error=None, form_data=None
+    )
 
 
-@bp.route("/wein/loeschen/<int:wine_id>", methods=["POST"])
+@bp.route("/wines/<int:wine_id>/delete", methods=["POST"])
 @jwt_required(optional=True)
 def loesche_wein(wine_id):
     if jwt_rolle() != "admin":

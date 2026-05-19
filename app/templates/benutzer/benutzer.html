@@ -5,120 +5,115 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benutzerverwaltung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    <style>
-        body {
-            background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
-            background-attachment: fixed;
-            background-position: center;
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-color: #f4e3d7; 
-            margin: 0; padding: 0;
-        }
-        .container {
-            color: #FDFD96; 
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
-            font-family: "Times New Roman", Times, serif;  
-        }
-        /* Tabelle lesbar machen auf dunklem Grund */
-        .table { color: white; background-color: rgba(0,0,0,0.5); }
-    </style>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('main.home') }}">Das Rezeptbuch</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Startseite</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.ueber_uns') }}">Über uns</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('benutzer.verwalte_benutzer') }}">Benutzer</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('wein.wein_verwalten') }}">Wein</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('essen.verwalte_essen') }}">Essen</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.suche') }}">Suche</a></li>
-                </ul>
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main.home') }}">Startseite</a></li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.abmeldung') }}">Abmelden</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    {% from "_navbar.html" import render_navbar with context %}
+    {{ render_navbar('benutzer') }}
 
-    <div class="container mt-5">
-        <h1>Benutzerverwaltung</h1>
+    <div class="container mt-5 mb-5">
+        <h1 class="mb-4">Benutzerverwaltung</h1>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <div class="row">
-            <div class="col-md-5">
-                <h2>Neuen Benutzer anlegen</h2>
-                <form method="POST" action="{{ url_for('benutzer.verwalte_benutzer') }}">
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-control" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">E-Mail</label>
-                        <input type="email" class="form-control" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Passwort</label>
-                        <input type="password" class="form-control" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Speichern</button>
-                </form>
+        <div class="content-wrapper">
+            <!-- Neuen Benutzer anlegen -->
+            <div class="card text-light shadow-sm mb-5">
+                <div class="card-header">
+                    <h2 class="mb-0">Neuen Benutzer anlegen</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/users">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Name</label>
+                                    <input type="text" class="form-control" name="name" required placeholder="z.B. Musterbenutzerin">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">E-Mail</label>
+                                    <input type="email" class="form-control" name="email" required placeholder="z.B. benutzer@beispiel.de">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Passwort</label>
+                            <input type="password" class="form-control" name="password" required placeholder="Sicheres Passwort eingeben">
+                        </div>
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-plus-circle"></i> Benutzer speichern
+                        </button>
+                    </form>
+                </div>
             </div>
-            <div class="col-md-7">
-                <h2>Registrierte Benutzer</h2>
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>E-Mail</th>
-                            <th>Rolle</th>
-                        </tr>
-                    </thead>
-                    <body>
-                        {% for user in users %}
-                        <tr>                      
-                            <td>{{ user.id }}</td>
-                            <td>{{ user.name }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.rolle }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+            <!-- Registrierte Benutzer -->
+            <div class="card text-light shadow-sm">
+                <div class="card-header">
+                    <h2 class="mb-0">Registrierte Benutzer ({{ users|length }})</h2>
+                </div>
+                <div class="card-body p-0">
+                    {% if users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>E-Mail</th>
+                                    <th>Aktuelle Rolle</th>
+                                    <th class="text-center">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>                      
+                                    <td class="align-middle">{{ user.id }}</td>
+                                    <td class="align-middle">{{ user.name }}</td>
+                                    <td class="align-middle">{{ user.email }}</td>
+                                    <td class="align-middle">
+                                        <span class="badge bg-info text-dark">{{ user.rolle }}</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                        <form method="POST" action="/users/{{ user.id }}/role" class="d-flex gap-2">
+                                            <select name="rolle" class="form-select form-select-sm" style="max-width: 120px;">
+                                                <option value="gast" {% if user.rolle == 'gast' %}selected{% endif %}>Gast</option>
+                                                <option value="user" {% if user.rolle == 'user' %}selected{% endif %}>Benutzer</option>
+                                                <option value="admin" {% if user.rolle == 'admin' %}selected{% endif %}>Admin</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-warning">Update</button>
+                                        </form>
+                                        <form method="POST" action="/users/{{ user.id }}/delete" onsubmit="return confirm('Benutzer wirklich löschen?');">
+                                            <button type="submit" class="btn btn-sm btn-danger" {% if current_user_email == user.email %}disabled title="Eigenes Konto kann nicht gelöscht werden"{% endif %}>Löschen</button>
+                                        </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted p-3 mb-0">Keine Benutzer vorhanden.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    {% for user in users %}
-    <tr>
-    <td>{{ user.id }}</td>
-    <td>{{ user.name }}</td>
-    <td>{{ user.email }}</td>
-    <td>
-        <form method="POST" action="{{ url_for('benutzer.rolle_update', user_id=user.id) }}" class="d-flex">
-            <select name="rolle" class="form-select form-select-sm me-2">
-                <option value="gast" {% if user.rolle == 'gast' %}selected{% endif %}>Gast</option>
-                <option value="benutzer" {% if user.rolle == 'benutzer' %}selected{% endif %}>Benutzer</option>
-                <option value="admin" {% if user.rolle == 'admin' %}selected{% endif %}>Admin</option>
-            </select>
-            <button type="submit" class="btn btn-sm btn-outline-warning">Update</button>
-        </form>
-    </td>
-    </tr>
-    {% endfor %}
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-</tbody>
+</body>
 </html>

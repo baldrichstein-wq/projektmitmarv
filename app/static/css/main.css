@@ -1,0 +1,188 @@
+/* Global theme for Das Rezeptbuch */
+:root{
+  --primary-yellow: #FDFD96;
+  --primary-yellow-light: #FFFF99;
+  --content-bg: rgba(0,0,0,0.6);
+  --content-bg-hover: rgba(0,0,0,0.3);
+  --card-header-bg: #495057;
+  --border-color: #FDFD96;
+  --muted-white: rgba(255,255,255,0.95);
+}
+
+html,body{
+  height:100%;
+}
+body{
+  background-image: url("/static/images/Hintergrund1.jpg");
+  background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: #f4e3d7;
+  margin:0; padding:0;
+  font-family: "Times New Roman", Times, serif;
+  color: var(--primary-yellow);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.container{
+  color: var(--primary-yellow);
+}
+
+/* Content card used for edit pages */
+.content-card{
+  background-color: var(--content-bg);
+  border: 1px solid var(--border-color);
+  color: var(--muted-white);
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.content-card a{ color: var(--primary-yellow); text-decoration:none; }
+.content-card a:hover{ color: var(--primary-yellow-light); text-decoration:underline; }
+
+/* Wrapper for management pages that contain a form + table */
+.content-wrapper{
+  background-color: transparent; /* inherit from body/bg image */
+  border: 1px solid var(--border-color);
+  padding: 18px;
+  margin-bottom: 30px;
+}
+
+/* Auth page centering */
+.auth-wrapper{
+  min-height: calc(100vh - 56px);
+  display:flex; align-items:center; justify-content:center;
+  padding: 40px 20px;
+}
+
+/* Tables */
+.table{ color: var(--primary-yellow); background-color: transparent; margin-bottom:0; }
+.table thead th{ background-color: transparent; color: var(--primary-yellow); border-bottom: 1px solid rgba(255,255,255,0.08); }
+.table tbody tr:hover{ background-color: var(--content-bg-hover); color: var(--primary-yellow) !important; }
+.table a{ color: var(--primary-yellow); }
+.table a:hover{ color: var(--primary-yellow-light); }
+
+/* Form labels and inputs */
+.form-label{ color: var(--primary-yellow); }
+.form-control{ background-color: rgba(255,255,255,0.95); }
+
+/* Card header/body transparency for consistent forms */
+.card{
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 8px;
+}
+.card-header{
+  background-color: rgba(0,0,0,0.7); /* header semi-transparent */
+  color: var(--primary-yellow);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px 8px 0 0;
+  padding: 0.75rem 1.25rem;
+}
+.card-body{
+  background-color: rgba(0,0,0,0.45); /* body semi-transparent */
+  color: var(--muted-white);
+  padding: 1rem;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Global button text behavior */
+.btn,
+button,
+input[type="submit"],
+input[type="button"]{
+  color: #fff !important;
+  text-decoration: none;
+}
+
+.btn:hover,
+.btn:focus,
+button:hover,
+button:focus,
+input[type="submit"]:hover,
+input[type="submit"]:focus,
+input[type="button"]:hover,
+input[type="button"]:focus{
+  color: var(--primary-yellow) !important;
+  text-decoration: underline;
+}
+
+/* Navbar tweaks */
+.navbar-brand{ font-weight:700; color: var(--primary-yellow) !important; }
+.navbar .nav-link{ color: rgba(255,255,255,0.9) !important; }
+.navbar .nav-link.active{ color: var(--primary-yellow) !important; }
+
+/* Search page aligned with management page look */
+.search-page .search-wrapper{
+  background-color: transparent;
+}
+
+.search-page .search-result-info{
+  color: var(--primary-yellow);
+}
+
+.search-card{
+  background-color: rgba(0,0,0,0.55);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--muted-white);
+  height: 100%;
+}
+
+.search-card h5,
+.search-card h6,
+.search-card strong{
+  color: var(--primary-yellow);
+}
+
+.search-card p,
+.search-card li,
+.search-card label{
+  color: var(--muted-white);
+}
+
+.search-card .btn-outline-light{
+  border-color: var(--border-color);
+  color: var(--primary-yellow);
+}
+
+.search-card .btn-outline-light:hover{
+  background-color: rgba(253,253,150,0.2);
+}
+
+.recipe-box{
+  background-color: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.search-empty{
+  color: var(--primary-yellow-light) !important;
+}
+
+.search-card-empty{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.btn-custom{
+  background-color: rgba(253,253,150,0.2);
+  border: 1px solid var(--border-color);
+}
+
+.btn-custom:hover,
+.btn-custom:focus{
+  background-color: rgba(253,253,150,0.35);
+}
+
+/* Responsive tweaks */
+@media (max-width: 576px){
+  .content-card{ padding:12px; }
+  .auth-wrapper{ padding:20px 10px; }
+  .search-card{ padding:0.75rem; }
+}

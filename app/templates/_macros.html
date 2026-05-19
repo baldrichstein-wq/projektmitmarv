@@ -1,0 +1,3 @@
+{% macro rollen_text(rolle) %}
+    {% if rolle == 'gast' %}Gast{% elif rolle == 'user' %}Nutzer{% elif rolle == 'admin' %}Admin{% else %}{{ rolle }}{% endif %}
+{% endmacro %}

@@ -17,7 +17,9 @@ def _resolve_database_uri() -> str:
 
 class Config:
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-bitte-aendern")
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "wichtig-jwt-secret-bitte-aendern")
+    JWT_SECRET_KEY: str = os.getenv(
+        "JWT_SECRET_KEY", "wichtig-jwt-secret-bitte-aendern"
+    )
     SQLALCHEMY_DATABASE_URI: str = _resolve_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
 
@@ -35,6 +37,15 @@ class Config:
     OPENAPI_URL_PREFIX: str = "/"
     OPENAPI_SWAGGER_UI_PATH: str = "/api/docs"
     OPENAPI_SWAGGER_UI_URL: str = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
+    OPENAPI_COMPONENTS: dict = {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    }
 
 
 class DevelopmentConfig(Config):

@@ -28,8 +28,8 @@ def _seed_testdaten():
     if Benutzer.query.count() == 0:
         admin = Benutzer(name="Admin", email="admin@test.de", rolle="admin")
         admin.set_password("admin123")
-        benutzer = Benutzer(name="Benutzer", email="benutzer@test.de", rolle="benutzer")
-        benutzer.set_password("benutzer123")
+        benutzer = Benutzer(name="Benutzer", email="user@test.de", rolle="user")
+        benutzer.set_password("user123")
         _db.session.add_all([admin, benutzer])
 
     if Essen.query.count() == 0:
@@ -66,7 +66,7 @@ def client(app, db):
 def login_als(client, email: str, password: str):
     """Meldet einen Benutzer über die WebUI an und setzt den JWT-Cookie."""
     resp = client.post(
-        "/anmeldung",
+        "/login",
         data={"email": email, "password": password},
         follow_redirects=True,
     )
@@ -75,14 +75,17 @@ def login_als(client, email: str, password: str):
 
 @pytest.fixture(scope="function")
 def admin_token(client):
-    resp = client.post("/api/v1/auth/login", json={"email": "admin@test.de", "password": "admin123"})
+    resp = client.post(
+        "/api/v1/auth/login", json={"email": "admin@test.de", "password": "admin123"}
+    )
     return resp.get_json()["access_token"]
 
 
 @pytest.fixture(scope="function")
-def benutzer_token(client):
+def user_token(client):
     resp = client.post(
-        "/api/v1/auth/login", json={"email": "benutzer@test.de", "password": "benutzer123"}
+        "/api/v1/auth/login",
+        json={"email": "user@test.de", "password": "user123"},
     )
     return resp.get_json()["access_token"]
 

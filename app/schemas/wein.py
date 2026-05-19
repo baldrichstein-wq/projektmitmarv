@@ -10,3 +10,13 @@ class WeinSchema(Schema):
     brauanweisung = fields.Str(load_default=None, allow_none=True)
     brauzeit = fields.Int(load_default=0, validate=validate.Range(min=0))
     alkoholgehalt = fields.Float(load_default=0.0, validate=validate.Range(min=0.0))
+
+
+class WeinPatchSchema(Schema):
+    name = fields.Str(validate=validate.Length(min=1, max=200))
+    liter = fields.Float(validate=validate.Range(min=0.1))
+    zutaten = fields.List(fields.Str())
+    beschreibung = fields.Str(allow_none=True)
+    brauanweisung = fields.Str(allow_none=True)
+    brauzeit = fields.Int(validate=validate.Range(min=0))
+    alkoholgehalt = fields.Float(validate=validate.Range(min=0.0))

@@ -8,7 +8,7 @@ from app.utils import jwt_rolle
 bp = Blueprint("essen", __name__)
 
 
-@bp.route("/essen", methods=["GET", "POST"])
+@bp.route("/foods", methods=["GET", "POST"])
 @jwt_required(optional=True)
 def verwalte_essen():
     role = jwt_rolle()
@@ -19,7 +19,11 @@ def verwalte_essen():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         personen = int(request.form.get("personenanzahl", 4) or 4)
-        zutaten = [z.strip() for z in request.form.get("ingredients", "").split(",") if z.strip()]
+        zutaten = [
+            z.strip()
+            for z in request.form.get("ingredients", "").split(",")
+            if z.strip()
+        ]
         beschreibung = request.form.get("description", "").strip()
         kochanweisung = request.form.get("kochanweisung", "").strip()
         kochzeit = int(request.form.get("kochzeit", 0) or 0)
@@ -41,7 +45,7 @@ def verwalte_essen():
     return render_template("essen/essen.html", essen=speisen_liste, role=role)
 
 
-@bp.route("/essen/bearbeiten/<int:essen_id>", methods=["GET", "POST"])
+@bp.route("/foods/<int:essen_id>/edit", methods=["GET", "POST"])
 @jwt_required(optional=True)
 def bearbeite_essen(essen_id):
     role = jwt_rolle()
@@ -58,7 +62,9 @@ def bearbeite_essen(essen_id):
         aktuelles_essen.name = request.form.get("name", "").strip()
         aktuelles_essen.personenanzahl = int(request.form.get("personenanzahl") or 1)
         aktuelles_essen.zutaten = [
-            z.strip() for z in request.form.get("ingredients", "").split(",") if z.strip()
+            z.strip()
+            for z in request.form.get("ingredients", "").split(",")
+            if z.strip()
         ]
         aktuelles_essen.beschreibung = request.form.get("description", "").strip()
         aktuelles_essen.kochanweisung = request.form.get("kochanweisung", "").strip()
@@ -70,7 +76,7 @@ def bearbeite_essen(essen_id):
     return render_template("essen/essen_edit.html", essen=aktuelles_essen, role=role)
 
 
-@bp.route("/essen/loeschen/<int:essen_id>", methods=["POST"])
+@bp.route("/foods/<int:essen_id>/delete", methods=["POST"])
 @jwt_required(optional=True)
 def loesche_essen(essen_id):
     if jwt_rolle() != "admin":

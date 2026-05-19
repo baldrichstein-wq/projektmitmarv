@@ -4,7 +4,8 @@ from tests.conftest import auth_header
 class TestJWTLogin:
     def test_login_gueltig(self, client):
         resp = client.post(
-            "/api/v1/auth/login", json={"email": "admin@test.de", "password": "admin123"}
+            "/api/v1/auth/login",
+            json={"email": "admin@test.de", "password": "admin123"},
         )
         assert resp.status_code == 200
         daten = resp.get_json()
@@ -22,16 +23,17 @@ class TestJWTLogin:
         assert resp.status_code == 422
 
     def test_geschuetzte_route_ohne_token(self, client):
-        resp = client.get("/api/v1/essen/")
+        resp = client.get("/api/v1/foods/")
         assert resp.status_code == 401
 
     def test_geschuetzte_route_mit_token(self, client, admin_token):
-        resp = client.get("/api/v1/essen/", headers=auth_header(admin_token))
+        resp = client.get("/api/v1/foods/", headers=auth_header(admin_token))
         assert resp.status_code == 200
 
     def test_token_refresh(self, client):
         resp = client.post(
-            "/api/v1/auth/login", json={"email": "admin@test.de", "password": "admin123"}
+            "/api/v1/auth/login",
+            json={"email": "admin@test.de", "password": "admin123"},
         )
         refresh_token = resp.get_json()["refresh_token"]
 
@@ -50,7 +52,7 @@ class TestJWTLogin:
         )
         assert resp.status_code == 422
 
-    def test_ungueltige_rolle_im_token(self, client, benutzer_token):
+    def test_ungueltige_rolle_im_token(self, client, user_token):
         # Benutzer-Token darf kein Admin-Endpunkt aufrufen
-        resp = client.get("/api/v1/benutzer/", headers=auth_header(benutzer_token))
+        resp = client.get("/api/v1/users/", headers=auth_header(user_token))
         assert resp.status_code == 403

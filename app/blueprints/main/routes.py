@@ -1,4 +1,3 @@
-
 from flask import Blueprint, render_template, request
 from flask_jwt_extended import jwt_required
 
@@ -17,14 +16,14 @@ def home():
     return render_template("main/index.html", name=name, role=role)
 
 
-@bp.route("/ueber-uns")
+@bp.route("/about")
 @jwt_required(optional=True)
 def ueber_uns():
     role = jwt_rolle()
     return render_template("main/ueber-uns.html", role=role)
 
 
-@bp.route("/suche")
+@bp.route("/search")
 @jwt_required(optional=True)
 def suche():
     role = jwt_rolle()

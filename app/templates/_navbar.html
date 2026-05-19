@@ -1,0 +1,56 @@
+{% from "_macros.html" import rollen_text %}
+{% macro render_navbar(active='') -%}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('main.home') }}">Das Rezeptbuch</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active == 'home' else '' }}" {% if active == 'home' %}aria-current="page"{% endif %} href="{{ url_for('main.home') }}">Startseite</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active == 'ueber-uns' else '' }}" {% if active == 'ueber-uns' %}aria-current="page"{% endif %} href="/about">Über uns</a>
+                </li>
+                {% if role in ['user', 'admin'] %}
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active == 'wein' else '' }}" {% if active == 'wein' %}aria-current="page"{% endif %} href="/wines">Wein</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active == 'essen' else '' }}" {% if active == 'essen' %}aria-current="page"{% endif %} href="/foods">Essen</a>
+                </li>
+                {% endif %}
+                {% if role == 'admin' %}
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active == 'benutzer' else '' }}" {% if active == 'benutzer' %}aria-current="page"{% endif %} href="/users">Benutzer</a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active == 'suche' else '' }}" {% if active == 'suche' %}aria-current="page"{% endif %} href="/search">Suche</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                {% if role == 'gast' %}
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active == 'anmeldung' else '' }}" {% if active == 'anmeldung' %}aria-current="page"{% endif %} href="/login">Anmeldung</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active == 'registrierung' else '' }}" {% if active == 'registrierung' %}aria-current="page"{% endif %} href="/register">Registrierung</a>
+                </li>
+                {% else %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Benutzermenü">
+                        {{ name }} ({{ rollen_text(role) }})
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="/logout">Abmelden</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{%- endmacro %}

@@ -4,7 +4,7 @@ from ..extensions import db
 
 RECHTE_PRO_ROLLE: dict[str, list[str]] = {
     "admin": ["lesen", "schreiben", "aendern", "loeschen", "benutzer_verwalten"],
-    "benutzer": ["lesen", "schreiben", "aendern"],
+    "user": ["lesen", "schreiben", "aendern"],
     "gast": ["lesen"],
 }
 
@@ -16,7 +16,7 @@ class Benutzer(db.Model):
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(255), nullable=False, unique=True, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
-    rolle = db.Column(db.String(20), nullable=False, default="benutzer")
+    rolle = db.Column(db.String(20), nullable=False, default="user")
 
     def set_password(self, passwort: str) -> None:
         self.password_hash = generate_password_hash(passwort)

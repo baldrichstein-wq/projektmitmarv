@@ -6,6 +6,8 @@ from flask_jwt_extended import (
     set_access_cookies,
     unset_jwt_cookies,
 )
+from datetime import timedelta
+
 
 from app.extensions import db
 from app.models.benutzer import Benutzer
@@ -22,7 +24,7 @@ def _aktuelle_rolle() -> str:
         return "gast"
 
 
-@bp.route("/anmeldung", methods=["GET", "POST"])
+@bp.route("/login", methods=["GET", "POST"])
 @jwt_required(optional=True)
 def anmeldung():
     if request.method == "POST":
@@ -32,7 +34,11 @@ def anmeldung():
         user = Benutzer.query.filter_by(email=email).first()
         if user and user.check_password(password):
             additional_claims = {"rolle": user.rolle, "name": user.name}
-            access_token = create_access_token(identity=user.email, additional_claims=additional_claims)
+            access_token = create_access_token(
+                identity=user.email,
+                additional_claims=additional_claims,
+                expires_delta=timedelta(hours=1),
+            )
             resp = redirect(url_for("main.home"))
             set_access_cookies(resp, access_token)
             flash(f"Willkommen {user.name}!", "success")
@@ -42,7 +48,7 @@ def anmeldung():
     return render_template("auth/anmeldung.html", role=_aktuelle_rolle())
 
 
-@bp.route("/registrierung", methods=["GET", "POST"])
+@bp.route("/register", methods=["GET", "POST"])
 @jwt_required(optional=True)
 def registrierung():
     if request.method == "POST":
@@ -69,7 +75,7 @@ def registrierung():
     return render_template("auth/registrierung.html", role=_aktuelle_rolle())
 
 
-@bp.route("/abmeldung")
+@bp.route("/logout")
 @jwt_required(optional=True)
 def abmeldung():
     resp = redirect(url_for("main.home"))

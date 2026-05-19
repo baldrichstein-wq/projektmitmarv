@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate
 
-ROLLEN = ("gast", "benutzer", "admin")
+ROLLEN = ("gast", "user", "admin")
 
 
 class BenutzerSchema(Schema):
@@ -12,6 +12,15 @@ class BenutzerSchema(Schema):
 
 class RolleUpdateSchema(Schema):
     rolle = fields.Str(required=True, validate=validate.OneOf(ROLLEN))
+
+
+class BenutzerCreateSchema(Schema):
+    name = fields.Str(required=True, validate=validate.Length(min=1, max=120))
+    email = fields.Email(required=True)
+    password = fields.Str(
+        required=True, load_only=True, validate=validate.Length(min=6)
+    )
+    rolle = fields.Str(load_default="user", validate=validate.OneOf(ROLLEN))
 
 
 class LoginSchema(Schema):

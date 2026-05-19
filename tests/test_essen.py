@@ -3,25 +3,25 @@ from tests.conftest import auth_header, login_als
 
 class TestEssenHTML:
     def _login_als_benutzer(self, client):
-        login_als(client, "benutzer@test.de", "benutzer123")
+        login_als(client, "user@test.de", "user123")
 
     def _login_als_admin(self, client):
         login_als(client, "admin@test.de", "admin123")
 
     def test_essen_liste_gast_redirect(self, client):
-        resp = client.get("/essen", follow_redirects=True)
+        resp = client.get("/foods", follow_redirects=True)
         assert "anmelden" in resp.get_data(as_text=True).lower()
 
     def test_essen_liste_angemeldet(self, client):
         self._login_als_benutzer(client)
-        resp = client.get("/essen")
+        resp = client.get("/foods")
         assert resp.status_code == 200
         assert "Test-Essen" in resp.get_data(as_text=True)
 
     def test_essen_hinzufuegen(self, client):
         self._login_als_benutzer(client)
         resp = client.post(
-            "/essen",
+            "/foods",
             data={
                 "name": "Neues Gericht",
                 "personenanzahl": "2",
@@ -40,7 +40,7 @@ class TestEssenHTML:
 
         self._login_als_benutzer(client)
         essen_id = Essen.query.first().id
-        resp = client.post(f"/essen/loeschen/{essen_id}", follow_redirects=True)
+        resp = client.post(f"/foods/{essen_id}/delete", follow_redirects=True)
         assert "Nur Administratoren" in resp.get_data(as_text=True)
 
     def test_essen_loeschen_als_admin(self, client, db):
@@ -48,7 +48,7 @@ class TestEssenHTML:
 
         self._login_als_admin(client)
         essen_id = Essen.query.first().id
-        resp = client.post(f"/essen/loeschen/{essen_id}", follow_redirects=True)
+        resp = client.post(f"/foods/{essen_id}/delete", follow_redirects=True)
         assert resp.status_code == 200
 
     def test_essen_bearbeiten(self, client, db):
@@ -57,7 +57,7 @@ class TestEssenHTML:
         self._login_als_benutzer(client)
         essen_id = Essen.query.first().id
         resp = client.post(
-            f"/essen/bearbeiten/{essen_id}",
+            f"/foods/{essen_id}/edit",
             data={
                 "name": "Geändertes Essen",
                 "personenanzahl": "3",
@@ -73,19 +73,19 @@ class TestEssenHTML:
 
 class TestEssenAPI:
     def test_api_essen_liste(self, client, admin_token):
-        resp = client.get("/api/v1/essen/", headers=auth_header(admin_token))
+        resp = client.get("/api/v1/foods/", headers=auth_header(admin_token))
         assert resp.status_code == 200
         daten = resp.get_json()
         assert isinstance(daten, list)
         assert len(daten) >= 1
 
     def test_api_essen_ohne_token(self, client):
-        resp = client.get("/api/v1/essen/")
+        resp = client.get("/api/v1/foods/")
         assert resp.status_code == 401
 
-    def test_api_essen_anlegen(self, client, benutzer_token):
+    def test_api_essen_anlegen(self, client, user_token):
         resp = client.post(
-            "/api/v1/essen/",
+            "/api/v1/foods/",
             json={
                 "name": "API Gericht",
                 "personenanzahl": 2,
@@ -93,7 +93,7 @@ class TestEssenAPI:
                 "beschreibung": "Test",
                 "kochzeit": 10,
             },
-            headers=auth_header(benutzer_token),
+            headers=auth_header(user_token),
         )
         assert resp.status_code == 201
         assert resp.get_json()["name"] == "API Gericht"
@@ -102,17 +102,17 @@ class TestEssenAPI:
         from app.models.essen import Essen
 
         essen_id = Essen.query.first().id
-        resp = client.get(f"/api/v1/essen/{essen_id}", headers=auth_header(admin_token))
+        resp = client.get(f"/api/v1/foods/{essen_id}", headers=auth_header(admin_token))
         assert resp.status_code == 200
 
-    def test_api_essen_aktualisieren(self, client, benutzer_token, db):
+    def test_api_essen_aktualisieren(self, client, user_token, db):
         from app.models.essen import Essen
 
         essen_id = Essen.query.first().id
         resp = client.put(
-            f"/api/v1/essen/{essen_id}",
+            f"/api/v1/foods/{essen_id}",
             json={"name": "Aktualisiert", "personenanzahl": 4},
-            headers=auth_header(benutzer_token),
+            headers=auth_header(user_token),
         )
         assert resp.status_code == 200
         assert resp.get_json()["name"] == "Aktualisiert"
@@ -121,12 +121,16 @@ class TestEssenAPI:
         from app.models.essen import Essen
 
         essen_id = Essen.query.first().id
-        resp = client.delete(f"/api/v1/essen/{essen_id}", headers=auth_header(admin_token))
+        resp = client.delete(
+            f"/api/v1/foods/{essen_id}", headers=auth_header(admin_token)
+        )
         assert resp.status_code == 204
 
-    def test_api_essen_loeschen_kein_admin(self, client, benutzer_token, db):
+    def test_api_essen_loeschen_kein_admin(self, client, user_token, db):
         from app.models.essen import Essen
 
         essen_id = Essen.query.first().id
-        resp = client.delete(f"/api/v1/essen/{essen_id}", headers=auth_header(benutzer_token))
+        resp = client.delete(
+            f"/api/v1/foods/{essen_id}", headers=auth_header(user_token)
+        )
         assert resp.status_code == 403

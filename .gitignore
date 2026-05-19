@@ -37,6 +37,8 @@ venv.bak/
 # pytype static type analyzer
 .pytype/
 
+.ruff_cache/
+
 # Database files (SQLite) - ignore DB files and backup/journal variants
 *.db
 *.db-*

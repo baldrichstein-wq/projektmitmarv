@@ -1,0 +1,7 @@
+[run]
+source = app
+omit =
+    app/utils/rechner.py
+
+[report]
+show_missing = True

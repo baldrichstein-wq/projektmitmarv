@@ -12,6 +12,7 @@ Ein Flask-Backend-Projekt der Gruppe Marvin, Marina, Stefan und David — entsta
 - [Konfiguration](#konfiguration)
 - [API-Übersicht](#api-übersicht)
 - [JWT-Authentifizierung](#jwt-authentifizierung)
+- [Testabdeckung](#testabdeckung)
 - [Team & Rollen](#team--rollen)
 - [Sprint-Tagebuch](#sprint-tagebuch)
 
@@ -101,28 +102,33 @@ Alle API-Endpunkte sind unter `/api/v1/` erreichbar und erfordern einen JWT Bear
 
 | Methode | Pfad | Rolle | Beschreibung |
 |---|---|---|---|
-| `GET` | `/api/v1/essen/` | alle | Alle Rezepte auflisten |
-| `POST` | `/api/v1/essen/` | benutzer, admin | Neues Rezept anlegen |
-| `GET` | `/api/v1/essen/<id>` | alle | Einzelnes Rezept abrufen |
-| `PUT` | `/api/v1/essen/<id>` | benutzer, admin | Rezept bearbeiten |
-| `DELETE` | `/api/v1/essen/<id>` | admin | Rezept löschen |
+| `GET` | `/api/v1/foods/` | alle | Alle Rezepte auflisten |
+| `POST` | `/api/v1/foods/` | user, admin | Neues Rezept anlegen |
+| `GET` | `/api/v1/foods/<id>` | alle | Einzelnes Rezept abrufen |
+| `PUT` | `/api/v1/foods/<id>` | user, admin | Rezept vollständig ersetzen |
+| `PATCH` | `/api/v1/foods/<id>` | user, admin | Rezept teilweise aktualisieren |
+| `DELETE` | `/api/v1/foods/<id>` | admin | Rezept löschen |
 
 ### Wein
 
 | Methode | Pfad | Rolle | Beschreibung |
 |---|---|---|---|
-| `GET` | `/api/v1/wein/` | alle | Alle Weinrezepte auflisten |
-| `POST` | `/api/v1/wein/` | benutzer, admin | Neues Weinrezept anlegen |
-| `GET` | `/api/v1/wein/<id>` | alle | Einzelnes Weinrezept abrufen |
-| `PUT` | `/api/v1/wein/<id>` | benutzer, admin | Weinrezept bearbeiten |
-| `DELETE` | `/api/v1/wein/<id>` | admin | Weinrezept löschen |
+| `GET` | `/api/v1/wines/` | alle | Alle Weinrezepte auflisten |
+| `POST` | `/api/v1/wines/` | user, admin | Neues Weinrezept anlegen |
+| `GET` | `/api/v1/wines/<id>` | alle | Einzelnes Weinrezept abrufen |
+| `PUT` | `/api/v1/wines/<id>` | user, admin | Weinrezept vollständig ersetzen |
+| `PATCH` | `/api/v1/wines/<id>` | user, admin | Weinrezept teilweise aktualisieren |
+| `DELETE` | `/api/v1/wines/<id>` | admin | Weinrezept löschen |
 
 ### Benutzer (Admin only)
 
 | Methode | Pfad | Beschreibung |
 |---|---|---|
-| `GET` | `/api/v1/benutzer/` | Alle Benutzer auflisten |
-| `PUT` | `/api/v1/benutzer/<id>/rolle` | Benutzerrolle ändern |
+| `POST` | `/api/v1/users/` | Neuen Benutzer anlegen |
+| `GET` | `/api/v1/users/` | Alle Benutzer auflisten |
+| `GET` | `/api/v1/users/<id>` | Einzelnen Benutzer abrufen |
+| `PATCH` | `/api/v1/users/<id>` | Benutzer teilweise aktualisieren (aktuell: Rolle) |
+| `DELETE` | `/api/v1/users/<id>` | Benutzer löschen (Self-Delete geschützt) |
 
 ---
 
@@ -147,7 +153,7 @@ curl -X POST http://localhost:5000/api/v1/auth/login \
 ### Geschützte Endpunkte aufrufen
 
 ```bash
-curl http://localhost:5000/api/v1/essen/ \
+curl http://localhost:5000/api/v1/foods/ \
   -H "Authorization: Bearer <access_token>"
 ```
 
@@ -166,6 +172,19 @@ curl -X POST http://localhost:5000/api/v1/auth/refresh \
 | `benutzer@rezepte.de` | `benutzer123` | benutzer |
 
 > **Hinweis:** Diese Zugangsdaten sind nur für die lokale Entwicklung gedacht. In der Produktion müssen eigene Werte in der `.env` gesetzt werden.
+
+---
+
+## Testabdeckung
+
+Die aktuelle Testabdeckung für den Anwendungscode unter `app/` beträgt **92 %** (gemessen am 19.05.2026).
+
+Reproduzierbar mit:
+
+```bash
+python -m coverage run --source=app -m pytest -q
+python -m coverage report -m
+```
 
 ---
 
