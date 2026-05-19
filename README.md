@@ -196,6 +196,7 @@ python -m coverage report -m
 | **Marina** | Benutzerverwaltung, Rechtevergabe, Bugfixing |
 | **Stefan** | Datenbank, Essensrezepte, Datenbankmodelle, Bugfixing |
 | **David** | Projektleitung, Architektur,  Rechner, Templates,HTML Desgin, Bugfixing |
+| **Felix** | technische Unterstützung , Bugfixing, Optimierungen
 
 ---
 

@@ -113,7 +113,7 @@ def _seed_datenbank() -> None:
         admin = Benutzer(name="Admin", email="admin@rezepte.de", rolle="admin")
         admin.set_password("admin123")
         benutzer = Benutzer(
-            name="Benutzer", email="benutzer@rezepte.de", rolle="benutzer"
+            name="Benutzer", email="benutzer@rezepte.de", rolle="user"
         )
         benutzer.set_password("benutzer123")
         db.session.add_all([admin, benutzer])
