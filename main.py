@@ -45,9 +45,11 @@ def home():
     role = session.get('user_role', 'gast')
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0' ,port=port, debug=True)
+
 
 @app.route('/ueber-uns')
 def ueber_uns():
@@ -79,8 +81,12 @@ def loesche_benutzer(user_id):
         flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer löschen.', 'danger')
         return redirect(url_for('home'))
 
-    success, message = benutzer.benutzer_loeschen(user_id)
-    flash(message, 'success' if success else 'danger')
+    # Hier nur noch "success" abfangen (kein Entpacken mehr)
+    if benutzer.loesche_benutzer(user_id):
+        flash('Benutzer wurde erfolgreich gelöscht.', 'success')
+    else:
+        flash('Fehler beim Löschen des Benutzers (ID existiert evtl. nicht).', 'danger')
+        
     return redirect(url_for('verwalte_benutzer'))
 
 @app.route('/anmeldung', methods=['GET', 'POST'])
