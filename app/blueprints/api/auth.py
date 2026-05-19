@@ -16,7 +16,7 @@ bp = Blueprint(
 )
 
 
-@bp.route("/login")
+@bp.route("/logi")
 class Login(MethodView):
     @bp.arguments(LoginSchema)
     @bp.response(200, TokenSchema)
