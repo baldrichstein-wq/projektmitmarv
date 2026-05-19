@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benutzerverwaltung</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='images/Hintergrund1.jpg') }}");
+            background-attachment: fixed;
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-color: #f4e3d7; 
+            margin: 0; padding: 0;
+        }
+        .container {
+            color: #FDFD96; 
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+            font-family: "Times New Roman", Times, serif;  
+        }
+        /* Tabelle lesbar machen auf dunklem Grund */
+        .table { 
+            color: #FDFD96; 
+            background-color: rgba(0,0,0,0.5); 
+        }
+        .col-md-7 { background-color: rgba(0,0,0,0.5); padding: 20px; border-radius: 5px; }
+        .col-md-5 { background-color: rgba(0,0,0,0.5); padding: 20px; border-radius: 5px; }
+        .card {
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 1px solid #FDFD96;
+            color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('home') }}">Das Rezeptbuch</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Startseite</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('ueber_uns') }}">Über uns</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('wein_verwalten') }}">Wein</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('suche') }}">Suche</a></li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('abmeldung') }}">Abmelden</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1>Benutzerverwaltung</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-5 mb-4">
+                <h2>Neuen Benutzer anlegen</h2>
+                <form method="POST" action="{{ url_for('verwalte_benutzer') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">E-Mail</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Passwort</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                </form>
+            </div>
+
+            <div class="col-md-7">
+                <h2>Registrierte Benutzer</h2>
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>E-Mail</th>
+                            <th>Rolle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>                      
+                            <td>{{ user.id }}</td>
+                            <td class="bg-secondary bg-opacity-50 text-white fw-bold">{{ user.name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td class="bg-secondary bg-opacity-50">
+                                <form method="POST" action="{{ url_for('rolle_update', user_id=user.id) }}" class="d-flex">
+                                    <select name="rolle" class="form-select form-select-sm me-2">
+                                        <option value="gast" {% if user.rolle == 'gast' %}selected{% endif %}>Gast</option>
+                                        <option value="benutzer" {% if user.rolle == 'benutzer' %}selected{% endif %}>Benutzer</option>
+                                        <option value="admin" {% if user.rolle == 'admin' %}selected{% endif %}>Admin</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Update</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-2" formaction="{{ url_for('loesche_benutzer', user_id=user.id) }}" onclick="return confirm('Benutzer wirklich löschen?');">Löschen</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>
