@@ -168,7 +168,7 @@ def rolle_update(user_id):
     return redirect(url_for('verwalte_benutzer'))
 
 @app.route('/essen', methods=['GET', 'POST'])
-def verwalte_essen():
+def essen_verwalten():
     role = session.get('user_role', 'gast')
     if role == 'gast':
         flash('Bitte melden Sie sich an.', 'danger')
@@ -184,7 +184,7 @@ def verwalte_essen():
         
         essen.add_essen(name, int(personen), [z.strip() for z in zutaten], desc, anw, int(zeit))
         flash('Essen gespeichert.', 'success')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
     # 1. Alle Essen aus der Datenbank abrufen
     speisen_liste = essen.get_all_essen()
     
@@ -196,7 +196,7 @@ def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')
     if role != 'admin':
         flash('Nur Administratoren können Rezepte löschen.', 'danger')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
     
     # Hier wird die Lösch-Funktion aus deinem essen-Modul aufgerufen
     if essen.delete_essen(essen_id):
@@ -204,7 +204,7 @@ def loesche_essen(essen_id):
     else:
         flash('Fehler beim Löschen des Rezepts.', 'danger')
         
-    return redirect(url_for('verwalte_essen'))
+    return redirect(url_for('essen_verwalten'))
 
 @app.route('/suche')
 def suche():

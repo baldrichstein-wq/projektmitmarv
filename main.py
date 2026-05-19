@@ -48,9 +48,10 @@ def home():
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0' ,port=port, debug=True)
+# if __name__ == '__main__':
+#     port = int(os.environ.get('PORT', 5000))
+#     app.run(host='0.0.0.0' ,port=port, debug=True)
+
 
 
 @app.route('/ueber-uns')
@@ -171,7 +172,7 @@ def update_wine(wine_id):
 
 @app.route('/wein', methods=['GET', 'POST'])
 def wein_verwalten():
-    role = session.get('user_role', 'benutzer')
+    role = session.get('user_role', 'gast')
     if role != 'benutzer' and role != 'admin':
         flash('Bitte melde dich an, um Weine zu sehen.', 'danger')
         return redirect(url_for('anmeldung'))
@@ -193,7 +194,7 @@ def wein_verwalten():
     return render_template('wein.html', wines=weine, role=role)
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
 def loesche_wein(wine_id):
-    role = session.get('user_role', 'benutzer')
+    role = session.get('user_role', 'gast')
     if role != 'admin':
         flash('Nur Administratoren können Weine löschen.', 'danger')
         return redirect(url_for('wein_verwalten'))
@@ -222,7 +223,7 @@ def rolle_update(user_id):
 
 @app.route('/essen', methods=['GET', 'POST'])
 def essen_verwalten():
-    role = session.get('user_role', 'benutzer')
+    role = session.get('user_role', 'gast')
     if role == 'benutzer':
         flash('Bitte melden Sie sich an.', 'danger')
         return redirect(url_for('anmeldung'))
@@ -244,7 +245,7 @@ def essen_verwalten():
 
 @app.route('/essen/bearbeiten/<int:essen_id>', methods=['GET', 'POST'])
 def bearbeite_essen(essen_id):
-    role = session.get('user_role', 'benutzer')
+    role = session.get('user_role', 'gast')
     if role == 'gast':
         flash('Bitte melde dich an.', 'danger')
         return redirect(url_for('anmeldung'))

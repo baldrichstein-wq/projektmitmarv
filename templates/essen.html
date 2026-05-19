@@ -56,7 +56,7 @@
     {% if role in ['benutzer', 'admin'] %}
         {# Korrektur: Funktionsname war wein_verwalten in main.py #}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('wein_verwalten') }}">Wein</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('essen_verwalten') }}">Essen</a></li>
     {% endif %}
     {% if role == 'admin' %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a></li>
@@ -85,7 +85,7 @@
         {% if role in ['benutzer', 'admin'] %}
         <div class="card">
             <h2>Neues Rezept hinzufügen</h2>
-            <form method="post" action="{{ url_for('verwalte_essen') }}">
+            <form method="post" action="{{ url_for('essen_verwalten') }}">
                 <div class="row">
                     <div class="col-md-8 mb-3">
                         <label for="name" class="form-label">Name des Gerichts</label>

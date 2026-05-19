@@ -50,7 +50,7 @@
     {% if role in ['user', 'admin'] %}
         {# Korrektur: Funktionsname war wein_verwalten in main.py #}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('wein_verwalten') }}">Wein</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('essen_verwalten') }}">Essen</a></li>
     {% endif %}
     {% if role == 'admin' %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a></li>
