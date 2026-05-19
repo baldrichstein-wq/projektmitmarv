@@ -114,9 +114,9 @@
                             <td class="bg-secondary bg-opacity-50">
                                 <form method="POST" action="{{ url_for('rolle_update', user_id=user.id) }}" class="d-flex">
                                     <select name="rolle" class="form-select form-select-sm me-2">
-                                        <option value="gast" {% if user.rolle == 'gast' %}selected{% endif %}>Gast</option>
-                                        <option value="benutzer" {% if user.rolle == 'benutzer' %}selected{% endif %}>Benutzer</option>
-                                        <option value="admin" {% if user.rolle == 'admin' %}selected{% endif %}>Admin</option>
+                                        <option value="gast" {% if user.role == 'gast' %}selected{% endif %}>Gast</option>
+                                        <option value="benutzer" {% if user.role == 'benutzer' %}selected{% endif %}>Benutzer</option>
+                                        <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
                                     </select>
                                     <button type="submit" class="btn btn-sm btn-outline-warning">Update</button>
                                     <button type="submit" class="btn btn-sm btn-outline-danger ms-2" formaction="{{ url_for('loesche_benutzer', user_id=user.id) }}" onclick="return confirm('Benutzer wirklich löschen?');">Löschen</button>

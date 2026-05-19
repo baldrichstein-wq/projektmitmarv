@@ -28,12 +28,12 @@
             <a class="navbar-brand" href="{{ url_for('home') }}">Das Rezeptbuch</a>
             <div class="collapse navbar-collapse" id="navbarNav">
                <ul class="navbar-nav me-auto">
-    {% if role != 'gast','benutzer', 'admin' %}
+    
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Startseite</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('ueber_uns') }}">Über uns</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('suche') }}">Suche</a></li>
-    {% endif %}    
-    {% if role in ['user', 'admin'] %}
+    
+    {% if role in ['benutzer', 'admin'] %}
         {# Korrektur: Funktionsname war wein_verwalten in main.py #}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('wein_verwalten') }}">Wein</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('essen_verwalten') }}">Essen</a></li>
