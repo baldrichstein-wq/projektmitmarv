@@ -221,7 +221,7 @@ def rolle_update(user_id):
     return redirect(url_for('verwalte_benutzer'))
 
 @app.route('/essen', methods=['GET', 'POST'])
-def verwalte_essen():
+def essen_verwalten():
     role = session.get('user_role', 'benutzer')
     if role == 'benutzer':
         flash('Bitte melden Sie sich an.', 'danger')
@@ -230,14 +230,14 @@ def verwalte_essen():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         personen = request.form.get('personenanzahl', '4')
-        zutaten = request.form.get('ingredients', '').split(',')
+        zutaten = request.form.get('zutaten', '').split(',')
         desc = request.form.get('description', '').strip()
         anw = request.form.get('kochanweisung', '').strip()
         zeit = request.form.get('kochzeit', '0')
         
         essen.add_essen(name, int(personen), [z.strip() for z in zutaten], desc, anw, int(zeit))
         flash('Essen gespeichert.', 'success')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
 
     speisen_liste = essen.get_all_essen()
     return render_template('essen.html', essen=speisen_liste, role=role)
@@ -252,7 +252,7 @@ def bearbeite_essen(essen_id):
     aktuelles_essen = essen.get_essen(essen_id)
     if not aktuelles_essen:
         flash('Rezept nicht gefunden.', 'danger')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -264,7 +264,7 @@ def bearbeite_essen(essen_id):
 
         essen.update_essen(essen_id, name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
         flash(f'Rezept "{name}" wurde aktualisiert.', 'success')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
 
     return render_template('essen_edit.html', essen=aktuelles_essen, role=role)
 
@@ -301,7 +301,7 @@ def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')
     if role != 'admin':
         flash('Nur Administratoren können Rezepte löschen.', 'danger')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
     
     # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
     if essen.delete_essen(essen_id):
@@ -309,7 +309,7 @@ def loesche_essen(essen_id):
     else:
         flash('Fehler beim Löschen des Rezepts.', 'danger')
         
-    return redirect(url_for('verwalte_essen'))
+    return redirect(url_for('essen_verwalten'))
 
 @app.route('/suche')
 def suche():
