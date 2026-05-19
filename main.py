@@ -46,9 +46,9 @@ def home():
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
 
-if __name__ == '__main__':
+'''if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0' ,port=port, debug=True)
+    app.run(host='0.0.0.0' ,port=port, debug=True)'''
 
 
 @app.route('/ueber-uns')
@@ -99,13 +99,13 @@ def anmeldung():
         if user:
             session['user_email'] = email
             session['user_name'] = user.get('name', email)
-            session['user_role'] = user.get('rolle', 'gast')
+            session['user_role'] = user.get('rolle', 'benutzer')
             flash(f"Willkommen {session['user_name']}!", 'success')
             return redirect(url_for('home'))
         else:
             flash('Ungültige Anmeldedaten.', 'danger')
 
-    return render_template('anmeldung.html', role=session.get('user_role', 'gast'))
+    return render_template('anmeldung.html', role=session.get('user_role', 'benutzer'))
 
 @app.route('/abmeldung')
 def abmeldung():
@@ -168,7 +168,7 @@ def update_wine(wine_id):
 
 @app.route('/wein', methods=['GET', 'POST'])
 def wein_verwalten():
-    role = session.get('user_role', 'gast')
+    role = session.get('user_role', 'benutzer')
     if role != 'benutzer' and role != 'admin':
         flash('Bitte melde dich an, um Weine zu sehen.', 'danger')
         return redirect(url_for('anmeldung'))
@@ -190,7 +190,7 @@ def wein_verwalten():
     return render_template('wein.html', wines=weine, role=role)
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
 def loesche_wein(wine_id):
-    role = session.get('user_role', 'gast')
+    role = session.get('user_role', 'benutzer')
     if role != 'admin':
         flash('Nur Administratoren können Weine löschen.', 'danger')
         return redirect(url_for('wein_verwalten'))
@@ -219,8 +219,8 @@ def rolle_update(user_id):
 
 @app.route('/essen', methods=['GET', 'POST'])
 def verwalte_essen():
-    role = session.get('user_role', 'gast')
-    if role == 'gast':
+    role = session.get('user_role', 'benutzer')
+    if role == 'benutzer':
         flash('Bitte melden Sie sich an.', 'danger')
         return redirect(url_for('anmeldung'))
 
@@ -241,7 +241,7 @@ def verwalte_essen():
 
 @app.route('/essen/bearbeiten/<int:essen_id>', methods=['GET', 'POST'])
 def bearbeite_essen(essen_id):
-    role = session.get('user_role', 'gast')
+    role = session.get('user_role', 'benutzer')
     if role == 'gast':
         flash('Bitte melde dich an.', 'danger')
         return redirect(url_for('anmeldung'))
@@ -254,10 +254,10 @@ def bearbeite_essen(essen_id):
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         personen = int(request.form.get('personenanzahl') or 1)
-        zutaten = request.form.get('ingredients', '').split(',')
+        zutaten = request.form.get('zutaten', '').split(',')
         desc = request.form.get('description', '').strip()
         anw = request.form.get('kochanweisung', '').strip()
-        zeit = int(request.form.get('Kochzeit') or 0)
+        zeit = int(request.form.get('kochzeit') or 0)
 
         essen.update_essen(essen_id, name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
         flash(f'Rezept "{name}" wurde aktualisiert.', 'success')
@@ -268,7 +268,7 @@ def bearbeite_essen(essen_id):
 def get_essen(essen_id):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT id, name, personenanzahl, ingredients, description, kochanweisung, kochzeit FROM essen WHERE id = ?', (essen_id,))
+        cursor.execute('SELECT id, name, personenanzahl, zutaten, description, kochanweisung, kochzeit FROM essen WHERE id = ?', (essen_id,))
         row = cursor.fetchone()
     if row:
         return {
@@ -282,14 +282,14 @@ def get_essen(essen_id):
         }
     return None
 
-def update_essen(essen_id, name, personenanzahl, ingredients, description, kochanweisung, kochzeit):
+def update_essen(essen_id, name, personenanzahl, zutaten, description, kochanweisung, kochzeit):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE essen
-            SET name = ?, personenanzahl = ?, ingredients = ?, description = ?, kochanweisung = ?, kochzeit = ?
+            SET name = ?, personenanzahl = ?, zutaten = ?, description = ?, kochanweisung = ?, kochzeit = ?
             WHERE id = ?
-        ''', (name, personenanzahl, json.dumps(ingredients), description, kochanweisung, kochzeit, essen_id))
+        ''', (name, personenanzahl, json.dumps(zutaten), description, kochanweisung, kochzeit, essen_id))
         conn.commit()
         return cursor.rowcount > 0
     

@@ -98,11 +98,11 @@ def get_all_essen():
             'id': row[0],
             'name': row[1],
             'personenanzahl': row[2],
-            'ingredients': json.loads(row[3]),
+            'zutaten': json.loads(row[3]),
             'description': row[4],
             'kochanweisung': row[5],
-            'Kochzeit_min': minuten_roh,
-            'Kochzeit': format_kochzeit(minuten_roh)
+            'kochzeit_min': minuten_roh,
+            'kochzeit': format_kochzeit(minuten_roh)
         })
     return essen_liste
 
@@ -119,11 +119,11 @@ def get_essen(essen_id):
             'id': row[0],
             'name': row[1],
             'personenanzahl': row[2],
-            'ingredients': json.loads(row[3]),
+            'zutaten': json.loads(row[3]),
             'description': row[4],
             'kochanweisung': row[5],
-            'Kochzeit_min': minuten_roh,
-            'Kochzeit': format_kochzeit(minuten_roh)
+            'kochzeit_min': minuten_roh,
+            'kochzeit': format_kochzeit(minuten_roh)
         }
     return None
 
@@ -134,12 +134,12 @@ def delete_essen(essen_id):
         conn.commit()
         return cursor.rowcount > 0
 
-def update_essen(essen_id, name, personenanzahl, Zutaten, description, kochanweisung, Kochzeit):
+def update_essen(essen_id, name, personenanzahl, zutaten, description, kochanweisung, kochzeit):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE essen
-            SET name = ?, personenanzahl = ?, Zutaten = ?, description = ?, kochanweisung = ?, Kochzeit = ?
+            SET name = ?, personenanzahl = ?, zutaten = ?, description = ?, kochanweisung = ?, kochzeit = ?
             WHERE id = ?
         ''', (
             name,
