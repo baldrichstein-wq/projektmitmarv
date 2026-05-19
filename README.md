@@ -192,10 +192,10 @@ python -m coverage report -m
 
 | Name | Aufgaben |
 |---|---|
-| **Marvin** | Projektleitung, Architektur, Weinrezepte, Rechner, API-Design |
-| **Marina** | Benutzerverwaltung, Rechtevergabe, Templates |
-| **Stefan** | Datenbank, Essensrezepte, Datenbankmodelle |
-| **David** | Flask-Integration, HTML-Routen, Bugfixing |
+| **Marvin** | Flask-Integration, Projektleitung , HTML-Routen, Bugfixing, Weinrezepte, API-Design |
+| **Marina** | Benutzerverwaltung, Rechtevergabe, Bugfixing |
+| **Stefan** | Datenbank, Essensrezepte, Datenbankmodelle, Bugfixing |
+| **David** | Projektleitung, Architektur,  Rechner, Templates,HTML Desgin, Bugfixing |
 
 ---
 
@@ -217,8 +217,8 @@ python -m coverage report -m
 - Flask-Integration aller Module in `main.py` (David)
 - Weinrezepte überarbeitet und verbessert (Marvin)
 - Wein-zu-Essen-Vorschläge eingebaut
-- Rezept-Rechner für Skalierung nach Personen und Litern (Marvin)
-- Suchfunktion über Rezepte und Weine
+- Rezept-Rechner für Skalierung nach Personen und Litern (David)
+- Suchfunktion über Rezepte und Weine (David)
 - Fehlerbehebung (Mac-Probleme, Import-Konflikte) — frustrierender Tag, Team kämpft sich durch
 
 ### Sprint 3 (Woche 3)
