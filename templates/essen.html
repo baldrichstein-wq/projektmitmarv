@@ -82,7 +82,7 @@
             {% endif %}
         {% endwith %}
 
-        {% if role in ['user', 'admin'] %}
+        {% if role in ['benutzer', 'admin'] %}
         <div class="card">
             <h2>Neues Rezept hinzufügen</h2>
             <form method="post" action="{{ url_for('verwalte_essen') }}">
