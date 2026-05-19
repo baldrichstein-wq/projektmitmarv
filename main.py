@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from datetime import timedelta
 import os
 import re
 import benutzer
@@ -7,6 +8,7 @@ import essen
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'supersecretkey123' 
+app.permanent_session_lifetime = timedelta(days=7)
 
 # --- UTILITY FUNKTIONEN ---
 
@@ -97,6 +99,7 @@ def anmeldung():
 
         user = benutzer.benutzer_anmelden(email, password)
         if user:
+            session.permanent = True
             session['user_email'] = email
             session['user_name'] = user.get('name', email)
             session['user_role'] = user.get('rolle', 'benutzer')
