@@ -144,10 +144,10 @@ def update_essen(essen_id, name, personenanzahl, Zutaten, description, kochanwei
         ''', (
             name,
             personenanzahl,
-            json.dumps(zutaten),
+            json.dumps(Zutaten),
             description,
             kochanweisung,
-            kochzeit,
+            Kochzeit,
             essen_id
         ))
         conn.commit()
