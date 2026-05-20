@@ -329,7 +329,7 @@ def suche():
         # Speisen durchsuchen (Name, Beschreibung und jede einzelne Zutat)
         alle_speisen = essen.get_all_essen()
         for e in alle_speisen:
-            zutaten_string = " ".join(e['ingredients']).lower()
+            zutaten_string = " ".join(e['zutaten']).lower()
             if (query in e['name'].lower() or 
                 (e['description'] and query in e['description'].lower()) or 
                 query in zutaten_string):
