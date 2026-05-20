@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from datetime import timedelta
 import os
 import re
 import benutzer
@@ -7,6 +8,7 @@ import essen
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'supersecretkey123' 
+app.permanent_session_lifetime = timedelta(days=7)
 
 # --- UTILITY FUNKTIONEN ---
 
@@ -41,12 +43,11 @@ essen.init_db()
 
 @app.route('/')
 def home():
-    # Vereinheitlichung: Wenn keine Rolle in der Session, dann 'gast'
     role = session.get('user_role', 'gast')
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
 
-@app.route('/ueber-uns')
+@app.route('/ueber_uns')
 def ueber_uns():
     role = session.get('user_role', 'gast')
     return render_template('ueber-uns.html', role=role)
@@ -69,6 +70,20 @@ def verwalte_benutzer():
     users = benutzer.get_all_users()
     return render_template('benutzer.html', users=users, role=role)
 
+@app.route('/benutzer/loeschen/<int:user_id>', methods=['POST'])
+def loesche_benutzer(user_id):
+    role = session.get('user_role', 'gast')
+    if role != 'admin':
+        flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer löschen.', 'danger')
+        return redirect(url_for('home'))
+
+    if benutzer.loesche_benutzer(user_id):
+        flash('Benutzer wurde erfolgreich gelöscht.', 'success')
+    else:
+        flash('Fehler beim Löschen des Benutzers (ID existiert evtl. nicht).', 'danger')
+        
+    return redirect(url_for('verwalte_benutzer'))
+
 @app.route('/anmeldung', methods=['GET', 'POST'])
 def anmeldung():
     if request.method == 'POST':
@@ -77,15 +92,16 @@ def anmeldung():
 
         user = benutzer.benutzer_anmelden(email, password)
         if user:
+            session.permanent = True
             session['user_email'] = email
             session['user_name'] = user.get('name', email)
-            session['user_role'] = user.get('rolle', 'gast')
+            session['user_role'] = user.get('role', 'benutzer')
             flash(f"Willkommen {session['user_name']}!", 'success')
             return redirect(url_for('home'))
         else:
             flash('Ungültige Anmeldedaten.', 'danger')
 
-    return render_template('anmeldung.html', role=session.get('user_role', 'gast'))
+    return render_template('anmeldung.html', role=session.get('user_role', 'benutzer'))
 
 @app.route('/abmeldung')
 def abmeldung():
@@ -168,6 +184,7 @@ def wein_verwalten():
 
     weine = wine.get_all_wines()
     return render_template('wein.html', wines=weine, role=role)
+
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
 def loesche_wein(wine_id):
     role = session.get('user_role', 'gast')
@@ -175,7 +192,6 @@ def loesche_wein(wine_id):
         flash('Nur Administratoren können Weine löschen.', 'danger')
         return redirect(url_for('wein_verwalten'))
     
-    # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
     if wine.delete_wine(wine_id):
         flash('Wein wurde erfolgreich gelöscht.', 'success')
     else:
@@ -198,7 +214,7 @@ def rolle_update(user_id):
     return redirect(url_for('verwalte_benutzer'))
 
 @app.route('/essen', methods=['GET', 'POST'])
-def verwalte_essen():
+def essen_verwalten():
     role = session.get('user_role', 'gast')
     if role == 'gast':
         flash('Bitte melden Sie sich an.', 'danger')
@@ -206,15 +222,25 @@ def verwalte_essen():
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        personen = request.form.get('personenanzahl', '4')
-        zutaten = request.form.get('ingredients', '').split(',')
+        if not name:
+            flash('Der Name des Essens darf nicht leer sein.', 'danger')
+            return redirect(url_for('essen_verwalten'))
+
+        # Absicherung gegen ValueError:
+        try:
+            personen = int(request.form.get('personenanzahl', '4'))
+            zeit = int(request.form.get('kochzeit', '0'))
+        except ValueError:
+            flash('Personenanzahl und Kochzeit müssen Zahlen sein!', 'danger')
+            return redirect(url_for('essen_verwalten'))
+        
+        zutaten = request.form.get('zutaten', '').split(',')
         desc = request.form.get('description', '').strip()
         anw = request.form.get('kochanweisung', '').strip()
-        zeit = request.form.get('kochzeit', '0')
         
-        essen.add_essen(name, int(personen), [z.strip() for z in zutaten], desc, anw, int(zeit))
+        essen.add_essen(name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
         flash('Essen gespeichert.', 'success')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
 
     speisen_liste = essen.get_all_essen()
     return render_template('essen.html', essen=speisen_liste, role=role)
@@ -229,64 +255,35 @@ def bearbeite_essen(essen_id):
     aktuelles_essen = essen.get_essen(essen_id)
     if not aktuelles_essen:
         flash('Rezept nicht gefunden.', 'danger')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         personen = int(request.form.get('personenanzahl') or 1)
-        zutaten = request.form.get('ingredients', '').split(',')
+        zutaten = request.form.get('zutaten', '').split(',')
         desc = request.form.get('description', '').strip()
         anw = request.form.get('kochanweisung', '').strip()
-        zeit = int(request.form.get('Kochzeit') or 0)
+        zeit = int(request.form.get('kochzeit') or 0)
 
         essen.update_essen(essen_id, name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
         flash(f'Rezept "{name}" wurde aktualisiert.', 'success')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
 
     return render_template('essen_edit.html', essen=aktuelles_essen, role=role)
-
-def get_essen(essen_id):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT id, name, personenanzahl, ingredients, description, kochanweisung, kochzeit FROM essen WHERE id = ?', (essen_id,))
-        row = cursor.fetchone()
-    if row:
-        return {
-            'id': row[0],
-            'name': row[1],
-            'personenanzahl': row[2],
-            'ingredients': json.loads(row[3]),
-            'description': row[4],
-            'kochanweisung': row[5],
-            'kochzeit': row[6],
-        }
-    return None
-
-def update_essen(essen_id, name, personenanzahl, ingredients, description, kochanweisung, kochzeit):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE essen
-            SET name = ?, personenanzahl = ?, ingredients = ?, description = ?, kochanweisung = ?, kochzeit = ?
-            WHERE id = ?
-        ''', (name, personenanzahl, json.dumps(ingredients), description, kochanweisung, kochzeit, essen_id))
-        conn.commit()
-        return cursor.rowcount > 0
     
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')
     if role != 'admin':
         flash('Nur Administratoren können Rezepte löschen.', 'danger')
-        return redirect(url_for('verwalte_essen'))
+        return redirect(url_for('essen_verwalten'))
     
-    # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
     if essen.delete_essen(essen_id):
         flash('Rezept wurde erfolgreich gelöscht.', 'success')
     else:
         flash('Fehler beim Löschen des Rezepts.', 'danger')
         
-    return redirect(url_for('verwalte_essen'))
+    return redirect(url_for('essen_verwalten'))
 
 @app.route('/suche')
 def suche():
@@ -297,7 +294,6 @@ def suche():
     gefundene_speisen = []
 
     if query:
-        # Weine durchsuchen (Name, Beschreibung und jede einzelne Zutat)
         alle_weine = wine.get_all_wines()
         for w in alle_weine:
             zutaten_string = " ".join(w['ingredients']).lower()
@@ -306,10 +302,9 @@ def suche():
                 query in zutaten_string):
                 gefundene_weine.append(w)
 
-        # Speisen durchsuchen (Name, Beschreibung und jede einzelne Zutat)
         alle_speisen = essen.get_all_essen()
         for e in alle_speisen:
-            zutaten_string = " ".join(e['ingredients']).lower()
+            zutaten_string = " ".join(e['zutaten']).lower()
             if (query in e['name'].lower() or 
                 (e['description'] and query in e['description'].lower()) or 
                 query in zutaten_string):
@@ -322,4 +317,5 @@ def suche():
                            role=role)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+     port = int(os.environ.get('PORT', 5000))
+     app.run(host='0.0.0.0' ,port=port, debug=True)
