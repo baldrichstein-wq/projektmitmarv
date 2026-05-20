@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from datetime import timedelta
 import os
 import re
 import benutzer
@@ -8,7 +7,6 @@ import essen
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'supersecretkey123' 
-app.permanent_session_lifetime = timedelta(days=7)
 
 # --- UTILITY FUNKTIONEN ---
 
@@ -43,11 +41,14 @@ essen.init_db()
 
 @app.route('/')
 def home():
+    # Vereinheitlichung: Wenn keine Rolle in der Session, dann 'gast'
     role = session.get('user_role', 'gast')
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
-
-@app.route('/ueber_uns')
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0' ,port=port, debug=True)
+@app.route('/ueber-uns')
 def ueber_uns():
     role = session.get('user_role', 'gast')
     return render_template('ueber-uns.html', role=role)
@@ -70,20 +71,6 @@ def verwalte_benutzer():
     users = benutzer.get_all_users()
     return render_template('benutzer.html', users=users, role=role)
 
-@app.route('/benutzer/loeschen/<int:user_id>', methods=['POST'])
-def loesche_benutzer(user_id):
-    role = session.get('user_role', 'gast')
-    if role != 'admin':
-        flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer löschen.', 'danger')
-        return redirect(url_for('home'))
-
-    if benutzer.loesche_benutzer(user_id):
-        flash('Benutzer wurde erfolgreich gelöscht.', 'success')
-    else:
-        flash('Fehler beim Löschen des Benutzers (ID existiert evtl. nicht).', 'danger')
-        
-    return redirect(url_for('verwalte_benutzer'))
-
 @app.route('/anmeldung', methods=['GET', 'POST'])
 def anmeldung():
     if request.method == 'POST':
@@ -92,16 +79,15 @@ def anmeldung():
 
         user = benutzer.benutzer_anmelden(email, password)
         if user:
-            session.permanent = True
             session['user_email'] = email
             session['user_name'] = user.get('name', email)
-            session['user_role'] = user.get('role', 'benutzer')
+            session['user_role'] = user.get('rolle', 'gast')
             flash(f"Willkommen {session['user_name']}!", 'success')
             return redirect(url_for('home'))
         else:
             flash('Ungültige Anmeldedaten.', 'danger')
 
-    return render_template('anmeldung.html', role=session.get('user_role', 'benutzer'))
+    return render_template('anmeldung.html', role=session.get('user_role', 'gast'))
 
 @app.route('/abmeldung')
 def abmeldung():
@@ -130,42 +116,10 @@ def registrierung():
 
     return render_template('registrierung.html', role=session.get('user_role', 'gast'))
 
-@app.route('/wein_edit/<int:wine_id>', methods=['GET', 'POST'])
-def update_wine(wine_id):
-    get_wine_by_id = wine.get_wine_by_id(wine_id)
-    if not get_wine_by_id:
-        flash('Wein nicht gefunden.', 'danger')
-        return redirect(url_for('wein_verwalten'))
-    
-    role = session.get('user_role', 'gast')
-    if role != 'benutzer' and role != 'admin':
-        flash('Nur Administratoren und Benutzer können Weine bearbeiten.', 'danger')
-        return redirect(url_for('wein_verwalten'))
-
-    if request.method == 'POST':
-        name = request.form.get('name')
-        liter = request.form.get('liter', '5')
-        ingredients = request.form.get('ingredients', '').split(',')
-        description = request.form.get('description')
-        instructions = request.form.get('brewing_instructions')
-        time = request.form.get('brewing_time')
-        alcohol = request.form.get('alcohol_content')
-
-        if not name:
-            flash('Fehler: Der Name des Weins darf nicht leer sein!', 'danger')
-            return redirect(url_for('update_wine', wine_id=wine_id))
-
-        wine.update_wine(wine_id, name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
-        flash(f'Wein "{name}" wurde aktualisiert!', 'success')
-        return redirect(url_for('wein_verwalten'))
-
-    wine_data = wine.get_wine_by_id(wine_id)
-    return render_template('wein_edit.html', wine=wine_data, role=role)
-
 @app.route('/wein', methods=['GET', 'POST'])
 def wein_verwalten():
     role = session.get('user_role', 'gast')
-    if role != 'benutzer' and role != 'admin':
+    if role == 'gast':
         flash('Bitte melde dich an, um Weine zu sehen.', 'danger')
         return redirect(url_for('anmeldung'))
 
@@ -184,7 +138,6 @@ def wein_verwalten():
 
     weine = wine.get_all_wines()
     return render_template('wein.html', wines=weine, role=role)
-
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
 def loesche_wein(wine_id):
     role = session.get('user_role', 'gast')
@@ -192,6 +145,7 @@ def loesche_wein(wine_id):
         flash('Nur Administratoren können Weine löschen.', 'danger')
         return redirect(url_for('wein_verwalten'))
     
+    # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
     if wine.delete_wine(wine_id):
         flash('Wein wurde erfolgreich gelöscht.', 'success')
     else:
@@ -222,55 +176,21 @@ def essen_verwalten():
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        if not name:
-            flash('Der Name des Essens darf nicht leer sein.', 'danger')
-            return redirect(url_for('essen_verwalten'))
-
-        # Absicherung gegen ValueError:
-        try:
-            personen = int(request.form.get('personenanzahl', '4'))
-            zeit = int(request.form.get('kochzeit', '0'))
-        except ValueError:
-            flash('Personenanzahl und kochzeit müssen Zahlen sein!', 'danger')
-            return redirect(url_for('essen_verwalten'))
-        
-        zutaten = request.form.get('zutaten', '').split(',')
+        personen = request.form.get('personenanzahl', '4')
+        zutaten = request.form.get('ingredients', '').split(',')
         desc = request.form.get('description', '').strip()
         anw = request.form.get('kochanweisung', '').strip()
+        zeit = request.form.get('kochzeit', '0')
         
-        essen.add_essen(name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
+        essen.add_essen(name, int(personen), [z.strip() for z in zutaten], desc, anw, int(zeit))
         flash('Essen gespeichert.', 'success')
         return redirect(url_for('essen_verwalten'))
-
+    # 1. Alle Essen aus der Datenbank abrufen
     speisen_liste = essen.get_all_essen()
+    
+    # 2. Die Liste 'speisen_liste' unter dem Namen 'essen' an das HTML übergeben
     return render_template('essen.html', essen=speisen_liste, role=role)
 
-@app.route('/essen/bearbeiten/<int:essen_id>', methods=['GET', 'POST'])
-def bearbeite_essen(essen_id):
-    role = session.get('user_role', 'gast')
-    if role == 'gast':
-        flash('Bitte melde dich an.', 'danger')
-        return redirect(url_for('anmeldung'))
-
-    aktuelles_essen = essen.get_essen(essen_id)
-    if not aktuelles_essen:
-        flash('Rezept nicht gefunden.', 'danger')
-        return redirect(url_for('essen_verwalten'))
-
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        personen = int(request.form.get('personenanzahl') or 1)
-        zutaten = request.form.get('zutaten', '').split(',')
-        desc = request.form.get('description', '').strip()
-        anw = request.form.get('kochanweisung', '').strip()
-        zeit = int(request.form.get('kochzeit') or 0)
-
-        essen.update_essen(essen_id, name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
-        flash(f'Rezept "{name}" wurde aktualisiert.', 'success')
-        return redirect(url_for('essen_verwalten'))
-
-    return render_template('essen_edit.html', essen=aktuelles_essen, role=role)
-    
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')
@@ -278,6 +198,7 @@ def loesche_essen(essen_id):
         flash('Nur Administratoren können Rezepte löschen.', 'danger')
         return redirect(url_for('essen_verwalten'))
     
+    # Hier wird die Lösch-Funktion aus deinem essen-Modul aufgerufen
     if essen.delete_essen(essen_id):
         flash('Rezept wurde erfolgreich gelöscht.', 'success')
     else:
@@ -294,6 +215,7 @@ def suche():
     gefundene_speisen = []
 
     if query:
+        # Weine durchsuchen (Name, Beschreibung und jede einzelne Zutat)
         alle_weine = wine.get_all_wines()
         for w in alle_weine:
             zutaten_string = " ".join(w['ingredients']).lower()
@@ -302,9 +224,10 @@ def suche():
                 query in zutaten_string):
                 gefundene_weine.append(w)
 
+        # Speisen durchsuchen (Name, Beschreibung und jede einzelne Zutat)
         alle_speisen = essen.get_all_essen()
         for e in alle_speisen:
-            zutaten_string = " ".join(e['zutaten']).lower()
+            zutaten_string = " ".join(e['ingredients']).lower()
             if (query in e['name'].lower() or 
                 (e['description'] and query in e['description'].lower()) or 
                 query in zutaten_string):
@@ -317,5 +240,4 @@ def suche():
                            role=role)
 
 if __name__ == '__main__':
-     port = int(os.environ.get('PORT', 5000))
-     app.run(host='0.0.0.0' ,port=port, debug=True)
+    app.run(debug=True)

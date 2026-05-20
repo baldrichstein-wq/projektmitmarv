@@ -6,38 +6,38 @@ from werkzeug.security import generate_password_hash, check_password_hash
 DB_FILE = 'benutzer.db'
 
 # --- Rechteverwaltung ---
-RECHTE_PRO_ROLLE = {
+RECHTE_PRO_ROLE = {
     'admin': ['lesen', 'schreiben', 'aendern', 'loeschen', 'benutzer_verwalten'],
     'benutzer': ['lesen', 'schreiben', 'aendern'],
     'gast': ['lesen'],
 }
 
-def normalize_rolle(rolle):
+def normalize_role(role):
     """Vereinheitlicht alte und neue Rollennamen."""
-    if not rolle:
+    if not role:
         return 'gast'
-    rolle_clean = str(rolle).strip().lower()
-    if rolle_clean in ['user', 'benutzer']:
+    role_clean = str(role).strip().lower()
+    if role_clean in ['user', 'benutzer']:
         return 'benutzer'
-    if rolle_clean in RECHTE_PRO_ROLLE:
-        return rolle_clean
+    if role_clean in RECHTE_PRO_ROLE:
+        return role_clean
     return 'gast'
 
-def rechte_fuer_rolle(rolle):
+def rechte_fuer_role(role):
     """Gibt alle Rechte einer Rolle zurück."""
-    rolle = normalize_rolle(rolle)
-    return RECHTE_PRO_ROLLE.get(rolle, RECHTE_PRO_ROLLE['gast']) 
+    role = normalize_role(role)
+    return RECHTE_PRO_ROLE.get(role, RECHTE_PRO_ROLE['gast']) 
 
 def hat_recht(user, recht):
     """Prüft, ob ein Benutzer ein bestimmtes Recht hat."""
-    rolle = 'gast'
+    role = 'benutzer'
     if user:
-        rolle = user.get('rolle', 'gast')
-    return recht in rechte_fuer_rolle(rolle)
+        role = user.get('role', 'benutzer')
+    return recht in rechte_fuer_role(role)
 
 def ist_admin(user):
     """Prüft, ob der Benutzer Administrator ist."""
-    return user is not None and normalize_rolle(user.get('rolle')) == 'admin'
+    return user is not None and normalize_role(user.get('role')) == 'admin'
 
 def init_db():
     """Erstellt die Datenbank und Beispiel-Logins mit Password-Hashing."""
@@ -50,14 +50,14 @@ def init_db():
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
-            rolle TEXT DEFAULT 'benutzer'
+            role TEXT DEFAULT 'benutzer'
         )
     ''')
     
     cursor.execute("PRAGMA table_info(benutzer)")
     columns = [column[1] for column in cursor.fetchall()]
-    if 'rolle' not in columns:
-        cursor.execute("ALTER TABLE benutzer ADD COLUMN rolle TEXT DEFAULT 'benutzer'")
+    if 'role' not in columns:
+        cursor.execute("ALTER TABLE benutzer ADD COLUMN role TEXT DEFAULT 'benutzer'")
 
     cursor.execute('SELECT COUNT(*) FROM benutzer')
     if cursor.fetchone()[0] == 0:
@@ -66,7 +66,7 @@ def init_db():
         benutzer_hash = generate_password_hash('benutzer123')
         
         cursor.executemany('''
-            INSERT INTO benutzer (name, email, password, rolle)
+            INSERT INTO benutzer (name, email, password, role)
             VALUES (?, ?, ?, ?)
         ''', [
             ('Admin', 'admin@rezepte.de', admin_hash, 'admin'),
@@ -81,7 +81,7 @@ def benutzer_anmelden(email, passwort):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     # Nur anhand der E-Mail suchen, da der Passwort-String in der DB ein Hash ist
-    cursor.execute('SELECT id, name, email, password, rolle FROM benutzer WHERE email = ?', (email,))
+    cursor.execute('SELECT id, name, email, password, role FROM benutzer WHERE email = ?', (email,))
     user = cursor.fetchone()
     conn.close()
     
@@ -91,38 +91,47 @@ def benutzer_anmelden(email, passwort):
             'id': user[0],
             'name': user[1],
             'email': user[2],
-            'rolle': normalize_rolle(user[4]) 
+            'role': normalize_role(user[4]) 
         }
     return None
 
-def benutzer_anlegen(name, email, passwort, rolle="benutzer"):
+def benutzer_anlegen(name, email, passwort, role="benutzer"):
     """Fügt einen neuen Benutzer mit gehashtem Passwort hinzu."""
-    # Falls rolle None oder leer ist, Standardwert nutzen
-    if not rolle:
-        rolle = "benutzer"
+    # Falls role None oder leer ist, Standardwert nutzen
+    if not role:
+        role = "benutzer"
     
-    rolle = normalize_rolle(rolle)
+    role = normalize_role(role)
     hashed_password = generate_password_hash(passwort)
         
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO benutzer (name, email, password, rolle)
+            INSERT INTO benutzer (name, email, password, role)
             VALUES (?, ?, ?, ?)
-        """, (name, email, hashed_password, rolle))
+        """, (name, email, hashed_password, role))
         conn.commit()
-        return True, f"Benutzer {name} als '{rolle}' erfolgreich angelegt!"
+        return True, f"Benutzer {name} als '{role}' erfolgreich angelegt!"
     except sqlite3.IntegrityError:
         return False, f"Fehler: Diese E-Mail '{email}' existiert bereits."
     finally:
         conn.close()
+def loesche_benutzer(user_id):
+    """Löscht einen Benutzer basierend auf der ID."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM benutzer WHERE id = ?', (user_id,))
+    success = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return success
 
 def get_all_users():
     """Gibt eine Liste aller Benutzer zurück."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, email, rolle FROM benutzer ORDER BY id')
+    cursor.execute('SELECT id, name, email, role FROM benutzer ORDER BY id')
     rows = cursor.fetchall()
     conn.close()
     
@@ -131,26 +140,27 @@ def get_all_users():
             'id': row[0],
             'name': row[1],
             'email': row[2],
-            'rolle': normalize_rolle(row[3])
+            'role': normalize_role(row[3])
         }
         for row in rows
     ]
-def rolle_aendern(user_id, neue_rolle):
+def rolle_aendern(user_id, neue_role):
     """Ändert die Rolle eines Benutzers basierend auf der ID."""
-    neue_rolle = normalize_rolle(neue_rolle)
+    neue_rolle = normalize_role(neue_rolle)
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute('UPDATE benutzer SET rolle = ? WHERE id = ?', (neue_rolle, user_id))
+    cursor.execute('UPDATE benutzer SET role = ? WHERE id = ?', (neue_role, user_id))
     success = cursor.rowcount > 0
     conn.commit()
     conn.close()
     return success
 
+
 def mache_zu_admin(email):
     """Vergibt Administratorrechte."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute('UPDATE benutzer SET rolle = "admin" WHERE email = ?', (email,))
+    cursor.execute('UPDATE benutzer SET role = "admin" WHERE email = ?', (email,))
     success = cursor.rowcount > 0
     conn.commit()
     conn.close()

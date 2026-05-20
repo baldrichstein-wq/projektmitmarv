@@ -10,6 +10,7 @@ Marvin, Marina, Stefan, David
 
 
 07.05. Fehlerbehebung und Fehlersuche und wieder auf tauchen von Fehlern David Marvin Marina Stefan  (wir sind Frustriert Mac ist Scheiße)
+20.05.2026 02:06 Uhr Bugfixing David mit Suporter Felix (4 Stunden Fehlersuche)
 
 
 

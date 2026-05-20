@@ -34,7 +34,7 @@ def berechne_essen_rezept(essen_id, ziel_personen):
     print(f"\n--- Skaliertes Rezept: {rezept['name']} ---")
     print(f"Basis: {rezept['personenanzahl']} Personen -> Ziel: {ziel_personen} Personen")
     
-    neue_zutaten = skaliere_zutaten(rezept['ingredients'], rezept['personenanzahl'], ziel_personen)
+    neue_zutaten = skaliere_zutaten(rezept['zutaten'], rezept['personenanzahl'], ziel_personen)
     
     for zutat in neue_zutaten:
         print(f"• {zutat}")

@@ -53,7 +53,7 @@ def anmeldung():
     return render_template('anmeldung.html', role=role)
 
 @app.route('/essen', methods=['GET', 'POST'])
-def verwalte_essen():
+def essen_verwalten():
     role = request.args.get('role', 'besucher')
     # Besucher dürfen diese Seite gar nicht sehen
     if role == 'besucher':
@@ -66,7 +66,7 @@ def verwalte_essen():
         # ... (restliche Daten sammeln)
         essen.add_essen(name, ...) # Logik aus essen.py
         flash('Essen gespeichert.', 'success')
-        return redirect(url_for('verwalte_essen', role=role))
+        return redirect(url_for('essen_verwalten', role=role))
 
     speisen_liste = essen.get_all_essen()
     return render_template('essen.html', essens=speisen_liste, role=role)
@@ -77,11 +77,11 @@ def loesche_essen(essen_id):
     # Nur Admin darf löschen
     if role != 'admin':
         flash('Nur Administratoren können Rezepte löschen.', 'danger')
-        return redirect(url_for('verwalte_essen', role=role))
+        return redirect(url_for('essen_verwalten', role=role))
     
     essen.delete_essen(essen_id)
     flash('Erfolgreich gelöscht.', 'success')
-    return redirect(url_for('verwalte_essen', role=role))
+    return redirect(url_for('essen_verwalten', role=role))
 
 @app.route('/suche')
 def suche():
@@ -99,7 +99,7 @@ def suche():
 
     {% if role in ['user', 'admin'] %}
         <a class="btn btn-secondary" href="{{ url_for('verwalte_wein', role=role) }}">Wein verwalten</a>
-        <a class="btn btn-success" href="{{ url_for('verwalte_essen', role=role) }}">Essen verwalten</a>
+        <a class="btn btn-success" href="{{ url_for('essen_verwalten', role=role) }}">Essen verwalten</a>
     {% endif %}
 
     {% if role == 'admin' %}
@@ -108,7 +108,7 @@ def suche():
 </div>
 #der nächste abschnitt ist für die essen.html
 {% if role in ['user', 'admin'] %}
-    <form method="post" action="{{ url_for('verwalte_essen', role=role) }}">
+    <form method="post" action="{{ url_for('essen_verwalten', role=role) }}">
         <button type="submit">Speichern</button>
     </form>
 {% endif %}
