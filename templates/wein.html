@@ -42,16 +42,39 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+  <ul class="navbar-nav me-auto">
+    {% if role != 'gast','benutzer', 'admin' %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Startseite</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('ueber_uns') }}">Über uns</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('wein_verwalten') }}">Wein</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_essen') }}">Essen</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('suche') }}">Suche</a></li>
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('abmeldung') }}">Abmelden</a></li>
+    {% endif %}    
+    {% if role in ['benutzer', 'admin'] %}
+        {# Korrektur: Funktionsname war wein_verwalten in main.py #}
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('wein_verwalten') }}">Wein</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('essen_verwalten') }}">Essen</a></li>
+    {% endif %}
+    {% if role == 'admin' %}
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('verwalte_benutzer') }}">Benutzer</a></li>
+    {% endif %}
+</ul>
+<ul class="navbar-nav">
+                    {% if session.get('user_email') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ session.get('user_name') }} ({{ role }})
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('abmeldung') }}">Abmelden</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('anmeldung') }}">Anmeldung</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('registrierung') }}">Registrierung</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -68,7 +91,7 @@
             {% endif %}
         {% endwith %}
 
-        {% if role in ['user', 'admin'] %}
+        {% if role in ['benutzer', 'admin'] %}
         <div class="card">
             <h2>Neuen Wein hinzufügen</h2>
             <form method="post" action="{{ url_for('wein_verwalten') }}">
@@ -133,7 +156,7 @@
                                     <button type="submit" class="btn btn-danger btn-sm">Löschen</button>
                                 </form>
                                 {% endif %}
-                                {% if role in ['user', 'admin'] %}
+                                {% if role in ['benutzer', 'admin'] %}
                                     <form method="post" action="{{ url_for('update_wine', wine_id=wine.id) }}" style="display:inline;">
                                     <button type="submit" class="btn btn-danger btn-sm">Bearbeiten</button>
                                 </form>

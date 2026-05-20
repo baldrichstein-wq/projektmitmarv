@@ -166,12 +166,12 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">{{ e.name }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">Für {{ e.personenanzahl }} Personen | {{ e.Kochzeit }} Min.</h6>
+                            <h6 class="card-subtitle mb-2 text-muted">Für {{ e.personenanzahl }} Personen | {{ e.kochzeit }} Min.</h6>
                             <p class="card-text">{{ e.description }}</p>
                             
                             <h6>Zutaten:</h6>
                             <ul class="list-group list-group-flush mb-3" id="list-essen-{{ e.id }}">
-                                {% for zutat in e.ingredients %}
+                                {% for zutat in e.zutaten %}
                                 <li class="list-group-item" data-base-text="{{ zutat }}">{{ zutat }}</li>
                                 {% endfor %}
                             </ul>
@@ -194,7 +194,7 @@
                                     <h6>Kochanweisung:</h6>
                                     <p>{{ e.kochanweisung }}</p>
                                     <hr>
-                                    <p><strong>Gesamtzeit:</strong> {{ e.Kochzeit }} Minuten</p>
+                                    <p><strong>Gesamtzeit:</strong> {{ e.kochzeit }} Minuten</p>
                                 </div>
                             </div>
                         </div>
