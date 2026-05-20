@@ -82,7 +82,7 @@ def add_essen(name, personenanzahl, Zutaten, description, kochanweisung, Kochzei
             Kochzeit
         ))
         conn.commit()
-        return cursor.lastrowid
+        return cursor.rowcount > 0
 
 def get_all_essen():
     conn = sqlite3.connect(DB_FILE)
@@ -144,10 +144,10 @@ def update_essen(essen_id, name, personenanzahl, Zutaten, description, kochanwei
         ''', (
             name,
             personenanzahl,
-            json.dumps(Zutaten),
+            json.dumps(zutaten),
             description,
             kochanweisung,
-            Kochzeit,
+            kochzeit,
             essen_id
         ))
         conn.commit()
