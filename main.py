@@ -231,7 +231,7 @@ def essen_verwalten():
             personen = int(request.form.get('personenanzahl', '4'))
             zeit = int(request.form.get('kochzeit', '0'))
         except ValueError:
-            flash('Personenanzahl und Kochzeit müssen Zahlen sein!', 'danger')
+            flash('Personenanzahl und kochzeit müssen Zahlen sein!', 'danger')
             return redirect(url_for('essen_verwalten'))
         
         zutaten = request.form.get('zutaten', '').split(',')
