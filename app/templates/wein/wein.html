@@ -31,6 +31,36 @@
 
         <div class="content-wrapper">
             {% if role in ['user', 'admin'] %}
+            {% if role == 'admin' %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h2 class="mb-0">JSON-Import / Export</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <form method="post" action="{{ url_for('wein.importiere_wein_json') }}" enctype="multipart/form-data">
+                                <label for="json_file_wein" class="form-label">Weine aus JSON importieren</label>
+                                <div class="input-group">
+                                    <input type="file" name="json_file" id="json_file_wein" class="form-control" accept=".json,application/json" required>
+                                    <button type="submit" class="btn btn-primary">Importieren</button>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="clear_wein" name="clear_table">
+                                    <label class="form-check-label" for="clear_wein">
+                                        Tabelle vor Import leeren
+                                    </label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <a href="{{ url_for('wein.exportiere_wein_json') }}" class="btn btn-outline-primary">Alle Weine als JSON exportieren</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Neuen Wein hinzufügen -->
             <div class="card shadow-sm mb-5">
                 <div class="card-header">

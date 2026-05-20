@@ -1,0 +1,185 @@
+[
+  {
+    "name": "Apfelwein klassisch",
+    "liter": 10.0,
+    "zutaten": [
+      "10 l naturtrueber Apfelsaft ohne Konservierungsstoffe",
+      "1.6 kg Zucker",
+      "Reinzuchthefe fuer Wein",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Traditioneller Apfelwein mit frischer Saeure und trockenem Charakter. Diese Rezeptur orientiert sich an gaengigen Hauswein-Ansatzen mit Apfelsaft, Zucker und Reinzuchthefe.",
+    "brauanweisung": "Apfelsaft in einen gaertauglichen Behaelter fuellen, Zucker aufloesen, Hefe und Hefenaehrsalz zugeben. Mit Gaerroehrchen bei 18-22 Grad ca. 3-5 Wochen gaeren lassen. Danach vom Hefesatz abziehen und 4-8 Wochen nachreifen lassen.",
+    "brauzeit": 8,
+    "alkoholgehalt": 10.5
+  },
+  {
+    "name": "Birnenwein",
+    "liter": 10.0,
+    "zutaten": [
+      "8 l Birnensaft",
+      "2 l Wasser",
+      "1.8 kg Zucker",
+      "Reinzuchthefe",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Milder Fruchtwein aus Birnen mit weichem Mundgefuehl. In vielen Regionen als haeufige Alternative zu Apfelwein verbreitet.",
+    "brauanweisung": "Birnensaft, Wasser und Zucker gut vermischen. Hefe vorbereiten und einruehren. Bei 18-22 Grad 4-6 Wochen gaeren lassen, dann abziehen und weitere 6 Wochen lagern.",
+    "brauzeit": 10,
+    "alkoholgehalt": 11.0
+  },
+  {
+    "name": "Johannisbeerwein rot",
+    "liter": 10.0,
+    "zutaten": [
+      "4 kg rote Johannisbeeren",
+      "6 l Wasser",
+      "2.2 kg Zucker",
+      "Reinzuchthefe",
+      "Pektinase",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Kraeftiger Beerenwein mit ausgepraegter Frucht und frischer Saeure. Roter Johannisbeerwein ist ein klassischer Ansatz im Hobbykeller.",
+    "brauanweisung": "Beeren zerdruecken, mit Wasser und Pektinase ansetzen, 12 Stunden stehen lassen. Zucker zugeben, Hefe einruehren und 4-6 Wochen gaeren lassen. Danach pressen, abziehen und 2-3 Monate reifen.",
+    "brauzeit": 12,
+    "alkoholgehalt": 12.0
+  },
+  {
+    "name": "Johannisbeerwein weiss",
+    "liter": 10.0,
+    "zutaten": [
+      "4 kg weisse Johannisbeeren",
+      "6 l Wasser",
+      "2.0 kg Zucker",
+      "Reinzuchthefe",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Heller Fruchtwein mit feiner Frische und leichteren Tanninen als die rote Variante. Beliebt fuer sommerliche, trockene Ausbaustile.",
+    "brauanweisung": "Beeren quetschen, mit Wasser mischen und kurz mazerieren. Zucker einruehren, Hefe zugeben und 4-5 Wochen gaeren lassen. Abziehen und mindestens 6 Wochen ausbauen.",
+    "brauzeit": 10,
+    "alkoholgehalt": 11.5
+  },
+  {
+    "name": "Holunderbeerenwein",
+    "liter": 10.0,
+    "zutaten": [
+      "3.5 kg reife Holunderbeeren",
+      "6.5 l Wasser",
+      "2.1 kg Zucker",
+      "Reinzuchthefe",
+      "Hefenaehrsalz",
+      "1 Zitrone"
+    ],
+    "beschreibung": "Dunkler, wuerziger Fruchtwein mit tiefer Farbe und beeriger Aromatik. Holunderwein hat in Mitteleuropa eine lange Tradition.",
+    "brauanweisung": "Beeren kurz erhitzen und entsaften, dann mit Wasser und Zucker mischen. Nach Abkuehlung Hefe und Naehrsalz zugeben. 4-6 Wochen gaeren lassen, abziehen und 2-4 Monate lagern.",
+    "brauzeit": 14,
+    "alkoholgehalt": 12.5
+  },
+  {
+    "name": "Kirschwein",
+    "liter": 10.0,
+    "zutaten": [
+      "4 kg Sauerkirschen",
+      "6 l Wasser",
+      "2.0 kg Zucker",
+      "Reinzuchthefe",
+      "Pektinase",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Aromatischer Fruchtwein mit deutlicher Kirschfrucht und ausgewogener Saeure. Ein klassischer Steinobstwein fuer den Hausgebrauch.",
+    "brauanweisung": "Kirschen entsteinen, zerdruecken und mit Wasser ansetzen. Pektinase einsetzen, dann Zucker und Hefe zugeben. 4-6 Wochen gaeren, anschliessend pressen, abziehen und reifen lassen.",
+    "brauzeit": 12,
+    "alkoholgehalt": 12.0
+  },
+  {
+    "name": "Pflaumenwein",
+    "liter": 10.0,
+    "zutaten": [
+      "4.5 kg Pflaumen",
+      "5.5 l Wasser",
+      "1.9 kg Zucker",
+      "Reinzuchthefe",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Fruchtiger Wein aus Pflaumen mit runder Struktur und leichter Wuerze. In vielen Regionen als haeufiger Herbstansatz bekannt.",
+    "brauanweisung": "Pflaumen entkernen und zerdruecken, mit Wasser und Zucker ansetzen. Hefe zugeben und 4-6 Wochen gaeren. Danach klaeren, vom Bodensatz trennen und 2 Monate reifen.",
+    "brauzeit": 12,
+    "alkoholgehalt": 11.8
+  },
+  {
+    "name": "Erdbeerwein",
+    "liter": 10.0,
+    "zutaten": [
+      "4 kg Erdbeeren",
+      "6 l Wasser",
+      "2.1 kg Zucker",
+      "Reinzuchthefe",
+      "Pektinase",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Leicht aromatischer Fruchtwein mit duftiger Beerennote. Erdbeerwein ist ein typischer Saisonansatz mit eher frischem Profil.",
+    "brauanweisung": "Erdbeeren zerdruecken, mit Wasser mischen und pektolytisch behandeln. Zucker aufloesen, Hefe zugeben und 3-5 Wochen gaeren lassen. Abziehen und 6-8 Wochen nachreifen.",
+    "brauzeit": 9,
+    "alkoholgehalt": 11.0
+  },
+  {
+    "name": "Himbeerwein",
+    "liter": 10.0,
+    "zutaten": [
+      "3.5 kg Himbeeren",
+      "6.5 l Wasser",
+      "2.2 kg Zucker",
+      "Reinzuchthefe",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Intensiver Fruchtwein mit klarer Himbeeraromatik und lebendiger Saeure. Sehr beliebt fuer halbtrockene und liebliche Ausbaustile.",
+    "brauanweisung": "Himbeeren zerdruecken und mit Wasser ansetzen. Zucker einruehren, Hefe zugeben und 4-5 Wochen gaeren lassen. Danach filtern, abziehen und 2 Monate lagern.",
+    "brauzeit": 11,
+    "alkoholgehalt": 12.2
+  },
+  {
+    "name": "Brombeerwein",
+    "liter": 10.0,
+    "zutaten": [
+      "4 kg Brombeeren",
+      "6 l Wasser",
+      "2.1 kg Zucker",
+      "Reinzuchthefe",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Dunkler, tanninreicher Fruchtwein mit deutlicher Waldbeerennote. Brombeerwein ist ein bewaehrter Klassiker unter den Beerenweinen.",
+    "brauanweisung": "Brombeeren zerdruecken, mit Wasser und Zucker aufsetzen. Hefe zugeben und 4-6 Wochen bei kontrollierter Temperatur gaeren lassen. Pressen, abziehen und 2-3 Monate ausbauen.",
+    "brauzeit": 12,
+    "alkoholgehalt": 12.4
+  },
+  {
+    "name": "Rhabarberwein",
+    "liter": 10.0,
+    "zutaten": [
+      "4 kg Rhabarber",
+      "6 l Wasser",
+      "2.0 kg Zucker",
+      "Reinzuchthefe",
+      "Hefenaehrsalz",
+      "1 Zitrone"
+    ],
+    "beschreibung": "Frischer Fruchtwein mit markanter Saeure und heller Farbe. Rhabarberwein wird haeufig trocken ausgebaut und jung getrunken.",
+    "brauanweisung": "Rhabarber schneiden, mit Wasser kurz ziehen lassen und abseihen. Zucker aufloesen, Hefe zugeben und 3-5 Wochen gaeren. Abziehen und mindestens 6 Wochen lagern.",
+    "brauzeit": 9,
+    "alkoholgehalt": 11.3
+  },
+  {
+    "name": "Traubenwein hausgemacht",
+    "liter": 10.0,
+    "zutaten": [
+      "12 kg reife Weintrauben",
+      "0.8 kg Zucker",
+      "Reinzuchthefe fuer Traubenmost",
+      "Hefenaehrsalz"
+    ],
+    "beschreibung": "Ein einfacher Hauswein aus frischen Trauben nach klassischem Prinzip von Maischegaerung und Ausbau. Stilistisch nahe an traditionellem Tafelwein.",
+    "brauanweisung": "Trauben quetschen und als Maische angaeren lassen, dann pressen. Most mit Zucker einstellen, Hefe und Naehrsalz zugeben und 2-4 Wochen gaeren lassen. Mehrfach abziehen und mehrere Wochen reifen.",
+    "brauzeit": 10,
+    "alkoholgehalt": 12.8
+  }
+]

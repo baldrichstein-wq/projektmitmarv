@@ -1,4 +1,6 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+import json
+
+from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 from flask_jwt_extended import jwt_required
 
 from app.extensions import db
@@ -6,6 +8,13 @@ from app.models.essen import Essen
 from app.utils import jwt_rolle
 
 bp = Blueprint("essen", __name__)
+
+
+def _parse_int(value, fallback: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
 
 
 @bp.route("/foods", methods=["GET", "POST"])
@@ -90,4 +99,107 @@ def loesche_essen(essen_id):
     db.session.delete(essen)
     db.session.commit()
     flash("Rezept wurde erfolgreich gelöscht.", "success")
+    return redirect(url_for("essen.verwalte_essen"))
+
+
+@bp.route("/foods/export", methods=["GET"])
+@jwt_required(optional=True)
+def exportiere_essen_json():
+    if jwt_rolle() != "admin":
+        flash("Nur Administratoren dürfen Rezepte exportieren.", "danger")
+        return redirect(url_for("essen.verwalte_essen"))
+
+    daten = [
+        {
+            "name": eintrag.name,
+            "personenanzahl": eintrag.personenanzahl,
+            "zutaten": eintrag.zutaten or [],
+            "beschreibung": eintrag.beschreibung,
+            "kochanweisung": eintrag.kochanweisung,
+            "kochzeit": eintrag.kochzeit,
+        }
+        for eintrag in Essen.query.order_by(Essen.id.asc()).all()
+    ]
+
+    return Response(
+        json.dumps(daten, ensure_ascii=False, indent=2),
+        mimetype="application/json",
+        headers={"Content-Disposition": "attachment; filename=essen_export.json"},
+    )
+
+
+@bp.route("/foods/import", methods=["POST"])
+@jwt_required(optional=True)
+def importiere_essen_json():
+    if jwt_rolle() != "admin":
+        flash("Nur Administratoren dürfen Rezepte importieren.", "danger")
+        return redirect(url_for("essen.verwalte_essen"))
+
+    datei = request.files.get("json_file")
+    if not datei or not datei.filename:
+        flash("Bitte wählen Sie eine JSON-Datei aus.", "warning")
+        return redirect(url_for("essen.verwalte_essen"))
+
+    try:
+        roh_daten = json.load(datei.stream)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        flash("Ungültiges JSON-Format.", "danger")
+        return redirect(url_for("essen.verwalte_essen"))
+
+    if isinstance(roh_daten, dict):
+        eintraege = roh_daten.get("items", [])
+    else:
+        eintraege = roh_daten
+
+    if not isinstance(eintraege, list):
+        flash("JSON muss eine Liste von Rezepten enthalten.", "danger")
+        return redirect(url_for("essen.verwalte_essen"))
+
+    clear_table = request.form.get("clear_table") == "on"
+    if clear_table:
+        db.session.query(Essen).delete()
+        db.session.commit()
+        flash("Bestehende Rezepte wurden gelöscht.", "info")
+
+    importiert = 0
+    uebersprungen = 0
+
+    for eintrag in eintraege:
+        if not isinstance(eintrag, dict):
+            uebersprungen += 1
+            continue
+
+        name = str(eintrag.get("name", "")).strip()
+        if not name:
+            uebersprungen += 1
+            continue
+
+        zutaten = eintrag.get("zutaten", [])
+        if isinstance(zutaten, str):
+            zutaten = [z.strip() for z in zutaten.split(",") if z.strip()]
+        elif isinstance(zutaten, list):
+            zutaten = [str(z).strip() for z in zutaten if str(z).strip()]
+        else:
+            zutaten = []
+
+        rezept = Essen(
+            name=name,
+            personenanzahl=_parse_int(eintrag.get("personenanzahl", 2), 2),
+            zutaten=zutaten,
+            beschreibung=str(eintrag.get("beschreibung", "") or "").strip(),
+            kochanweisung=str(eintrag.get("kochanweisung", "") or "").strip(),
+            kochzeit=_parse_int(eintrag.get("kochzeit", 0), 0),
+        )
+        db.session.add(rezept)
+        importiert += 1
+
+    if importiert > 0:
+        db.session.commit()
+        flash(f"{importiert} Rezepte wurden importiert.", "success")
+    else:
+        flash("Es wurden keine gültigen Rezepte importiert.", "warning")
+
+    if uebersprungen > 0:
+        flash(f"{uebersprungen} Einträge wurden übersprungen.", "warning")
+
     return redirect(url_for("essen.verwalte_essen"))

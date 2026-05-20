@@ -1,0 +1,220 @@
+[
+  {
+    "name": "Spaghetti Bolognese",
+    "personenanzahl": 4,
+    "zutaten": [
+      "500 g Spaghetti",
+      "400 g Rinderhackfleisch",
+      "1 Zwiebel",
+      "2 Knoblauchzehen",
+      "800 g gehackte Tomaten",
+      "2 EL Olivenoel",
+      "Salz",
+      "Pfeffer",
+      "Oregano"
+    ],
+    "beschreibung": "Klassisches Pastagericht mit kraeftiger Tomaten-Hackfleisch-Sauce, wie es in vielen Familien als Standardrezept gekocht wird.",
+    "kochanweisung": "Zwiebel und Knoblauch fein hacken und in Olivenoel anschwitzen. Hackfleisch anbraten, Tomaten zugeben und 25 Minuten koecheln lassen. Mit Salz, Pfeffer und Oregano abschmecken. Spaghetti al dente kochen und mit Sauce servieren.",
+    "kochzeit": 40
+  },
+  {
+    "name": "Kartoffelsuppe herzhaft",
+    "personenanzahl": 4,
+    "zutaten": [
+      "800 g Kartoffeln",
+      "2 Karotten",
+      "1 Lauchstange",
+      "1 Zwiebel",
+      "1.2 l Gemuesebruehe",
+      "150 ml Sahne",
+      "2 EL Butter",
+      "Salz",
+      "Muskat"
+    ],
+    "beschreibung": "Cremige Kartoffelsuppe mit Wintergemuese, rustikal und waermend fuer kalte Tage.",
+    "kochanweisung": "Gemuese wuerrfeln, Zwiebel in Butter anschwitzen, restliches Gemuese zugeben und kurz mitduensten. Mit Bruehe aufgiessen und 25 Minuten kochen. Teilweise puerieren, Sahne einruehren und mit Salz sowie Muskat abschmecken.",
+    "kochzeit": 45
+  },
+  {
+    "name": "Rindergulasch",
+    "personenanzahl": 4,
+    "zutaten": [
+      "1 kg Rindergulasch",
+      "2 Zwiebeln",
+      "2 EL Tomatenmark",
+      "500 ml Rinderfond",
+      "2 Paprika",
+      "2 EL Butterschmalz",
+      "1 TL Paprikapulver edelsuess",
+      "Salz",
+      "Pfeffer"
+    ],
+    "beschreibung": "Schmorgericht mit zartem Fleisch und intensiver Sauce, angelehnt an klassische mitteleuropaeische Gulaschrezepte.",
+    "kochanweisung": "Fleisch portionsweise in Butterschmalz scharf anbraten. Zwiebeln und Paprika mitroesten, Tomatenmark zugeben, mit Fond auffuellen und Gewuerze einruehren. Zugedeckt 90 Minuten schmoren lassen, bis das Fleisch weich ist.",
+    "kochzeit": 120
+  },
+  {
+    "name": "Chili con Carne",
+    "personenanzahl": 4,
+    "zutaten": [
+      "500 g Rinderhackfleisch",
+      "1 Dose Kidneybohnen",
+      "1 Dose Mais",
+      "1 Dose stueckige Tomaten",
+      "1 Zwiebel",
+      "1 rote Paprika",
+      "2 EL Oel",
+      "Chilipulver",
+      "Kreuzkuemmel",
+      "Salz"
+    ],
+    "beschreibung": "Wuerziger Eintopf mit Bohnen und Hackfleisch, beliebt fuer Meal-Prep und grosse Runden.",
+    "kochanweisung": "Zwiebel und Paprika in Oel anschwitzen, Hackfleisch kruemelig braten. Tomaten, Bohnen und Mais zugeben, mit Chili und Kreuzkuemmel abschmecken. 30 Minuten leicht koecheln lassen.",
+    "kochzeit": 45
+  },
+  {
+    "name": "Rahmgeschnetzeltes mit Pilzen",
+    "personenanzahl": 4,
+    "zutaten": [
+      "600 g Schweinegeschnetzeltes",
+      "300 g Champignons",
+      "1 Zwiebel",
+      "200 ml Sahne",
+      "150 ml Bruehe",
+      "2 EL Oel",
+      "1 EL Mehl",
+      "Salz",
+      "Pfeffer"
+    ],
+    "beschreibung": "Cremiges Pfannengericht mit Pilzen und zartem Fleisch, klassisch als schnelles Sonntagsessen.",
+    "kochanweisung": "Fleisch scharf anbraten und herausnehmen. Zwiebeln und Pilze anbraten, Mehl einstreuen, mit Bruehe und Sahne abloeschen. Fleisch wieder zugeben und 10 Minuten ziehen lassen. Mit Salz und Pfeffer abschmecken.",
+    "kochzeit": 35
+  },
+  {
+    "name": "Gemueselasagne",
+    "personenanzahl": 4,
+    "zutaten": [
+      "12 Lasagneblaetter",
+      "1 Zucchini",
+      "1 Aubergine",
+      "2 Paprika",
+      "700 ml Tomatensauce",
+      "300 g Ricotta",
+      "200 g Mozzarella",
+      "2 EL Olivenoel",
+      "Salz",
+      "Basilikum"
+    ],
+    "beschreibung": "Vegetarische Lasagne mit mediterranem Gemuese und cremiger Kaeseschicht.",
+    "kochanweisung": "Gemuese in Scheiben schneiden und kurz in Olivenoel anbraten. In einer Auflaufform abwechselnd Tomatensauce, Lasagneblaetter, Gemuese und Ricotta schichten. Mit Mozzarella bestreuen und bei 180 Grad etwa 40 Minuten backen.",
+    "kochzeit": 70
+  },
+  {
+    "name": "Huehnerfrikassee",
+    "personenanzahl": 4,
+    "zutaten": [
+      "600 g Huhnchenbrust",
+      "1 l Huehnerbruehe",
+      "200 g Erbsen",
+      "200 g Moehren",
+      "200 g Champignons",
+      "40 g Butter",
+      "40 g Mehl",
+      "100 ml Sahne",
+      "Salz",
+      "Zitronensaft"
+    ],
+    "beschreibung": "Klassisches Wohlfühlgericht mit heller Sauce und feinem Gemuese.",
+    "kochanweisung": "Huhnchen in Bruehe gar ziehen lassen und zerkleinern. Butter und Mehl anschwitzen, mit Bruehe aufgiessen und glattruehren. Gemuese und Fleisch in die Sauce geben, Sahne einruehren und mit Salz sowie Zitronensaft abschmecken.",
+    "kochzeit": 60
+  },
+  {
+    "name": "Kaesespaetzle",
+    "personenanzahl": 4,
+    "zutaten": [
+      "400 g Spaetzle",
+      "250 g Bergkaese gerieben",
+      "2 Zwiebeln",
+      "2 EL Butter",
+      "100 ml Milch",
+      "Salz",
+      "Pfeffer",
+      "Schnittlauch"
+    ],
+    "beschreibung": "Alpenklassiker mit geschmolzenem Kaese und geroesteten Zwiebeln, herzhaft und saettigend.",
+    "kochanweisung": "Spaetzle nach Packung kochen. Zwiebeln in Butter goldbraun roesten. Spaetzle mit Milch und Kaese in einer Pfanne mischen, bis der Kaese schmilzt. Mit Zwiebeln und Schnittlauch servieren.",
+    "kochzeit": 30
+  },
+  {
+    "name": "Linsencurry",
+    "personenanzahl": 4,
+    "zutaten": [
+      "300 g rote Linsen",
+      "1 Dose Kokosmilch",
+      "400 g stueckige Tomaten",
+      "1 Zwiebel",
+      "2 Knoblauchzehen",
+      "1 EL Currypulver",
+      "1 EL Oel",
+      "Salz",
+      "Koriander"
+    ],
+    "beschreibung": "Aromatisches, veganes Curry mit cremiger Kokosbasis und kurzer Garzeit.",
+    "kochanweisung": "Zwiebel und Knoblauch in Oel anschwitzen, Currypulver kurz mitroesten. Linsen, Tomaten und Kokosmilch zugeben und 20 Minuten koecheln lassen. Mit Salz abschmecken und mit Koriander servieren.",
+    "kochzeit": 35
+  },
+  {
+    "name": "Schweinebraten mit Kruste",
+    "personenanzahl": 6,
+    "zutaten": [
+      "1.8 kg Schweineschulter mit Schwarte",
+      "2 Zwiebeln",
+      "2 Karotten",
+      "500 ml Bruehe",
+      "2 EL Senf",
+      "2 EL Oel",
+      "Salz",
+      "Kuemmel"
+    ],
+    "beschreibung": "Ofenklassiker mit krosser Kruste und kraeftiger Bratensauce, oft fuer Festtage zubereitet.",
+    "kochanweisung": "Schwarte rautenfoermig einschneiden, Fleisch wuerzen und mit Senf einreiben. Im Braeter auf Gemuesebett mit etwas Oel anroesten, dann mit Bruehe angiessen und bei 160 Grad etwa 2 Stunden garen. Zum Schluss Temperatur erhoehen, damit die Kruste aufpoppt.",
+    "kochzeit": 160
+  },
+  {
+    "name": "Gebratener Lachs mit Zitronensauce",
+    "personenanzahl": 4,
+    "zutaten": [
+      "4 Lachsfilets",
+      "1 Bio-Zitrone",
+      "150 ml Sahne",
+      "1 Schalotte",
+      "1 EL Butter",
+      "1 EL Oel",
+      "Salz",
+      "Pfeffer",
+      "Dill"
+    ],
+    "beschreibung": "Saftiger Fischgang mit frischer Zitronennote und feiner Dillsauce.",
+    "kochanweisung": "Lachs salzen und in Oel auf der Hautseite knusprig braten, dann kurz wenden. Schalotte in Butter anschwitzen, mit Zitronensaft und Sahne abloeschen, reduzieren und mit Dill verfeinern. Mit Pfeffer abschmecken und zum Lachs servieren.",
+    "kochzeit": 25
+  },
+  {
+    "name": "Moussaka",
+    "personenanzahl": 6,
+    "zutaten": [
+      "2 Auberginen",
+      "600 g Hackfleisch",
+      "1 Zwiebel",
+      "400 g gehackte Tomaten",
+      "500 ml Bechamelsauce",
+      "120 g Kaese gerieben",
+      "2 EL Olivenoel",
+      "Salz",
+      "Pfeffer",
+      "Zimt"
+    ],
+    "beschreibung": "Schichtauflauf aus Auberginen, Hackfleisch und Bechamel, inspiriert von traditionellen Rezepturen aus dem Mittelmeerraum.",
+    "kochanweisung": "Auberginen in Scheiben schneiden, salzen und kurz anbraten. Hackfleisch mit Zwiebel anbraten, Tomaten und Gewuerze zugeben und einkochen. In eine Form schichten, mit Bechamel und Kaese abschliessen und bei 180 Grad 45 Minuten backen.",
+    "kochzeit": 90
+  }
+]

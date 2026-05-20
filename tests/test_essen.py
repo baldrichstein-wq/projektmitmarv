@@ -1,3 +1,5 @@
+import io
+
 from tests.conftest import auth_header, login_als
 
 
@@ -69,6 +71,96 @@ class TestEssenHTML:
             follow_redirects=True,
         )
         assert resp.status_code == 200
+
+    def test_essen_export_json(self, client):
+        self._login_als_admin(client)
+        resp = client.get("/foods/export")
+        assert resp.status_code == 200
+        assert resp.mimetype == "application/json"
+        assert "Test-Essen" in resp.get_data(as_text=True)
+
+    def test_essen_import_json(self, client, db):
+        from app.models.essen import Essen
+
+        self._login_als_admin(client)
+        payload = (
+            '[{"name":"Import-Gericht","personenanzahl":3,"zutaten":["A","B"],'
+            '"beschreibung":"Importiert","kochanweisung":"Kochen","kochzeit":25}]'
+        )
+        resp = client.post(
+            "/foods/import",
+            data={"json_file": (io.BytesIO(payload.encode("utf-8")), "essen.json")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert Essen.query.filter_by(name="Import-Gericht").first() is not None
+
+    def test_essen_export_json_nur_admin(self, client):
+        self._login_als_benutzer(client)
+        resp = client.get("/foods/export", follow_redirects=True)
+        assert resp.status_code == 200
+        assert "Nur Administratoren dürfen Rezepte exportieren" in resp.get_data(
+            as_text=True
+        )
+
+    def test_essen_import_json_nur_admin(self, client, db):
+        from app.models.essen import Essen
+
+        vorher = Essen.query.count()
+        self._login_als_benutzer(client)
+        payload = '[{"name":"Nicht-erlaubt"}]'
+        resp = client.post(
+            "/foods/import",
+            data={"json_file": (io.BytesIO(payload.encode("utf-8")), "essen.json")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert "Nur Administratoren dürfen Rezepte importieren" in resp.get_data(
+            as_text=True
+        )
+        assert Essen.query.count() == vorher
+
+    def test_essen_import_additiv(self, client, db):
+        from app.models.essen import Essen
+
+        vorher = Essen.query.count()
+        self._login_als_admin(client)
+        payload = (
+            '[{"name":"Zusatz-Gericht","personenanzahl":2,"zutaten":["Zutat"]'
+            ',"beschreibung":"Neu","kochanweisung":"Kochen","kochzeit":20}]'
+        )
+        resp = client.post(
+            "/foods/import",
+            data={"json_file": (io.BytesIO(payload.encode("utf-8")), "essen.json")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert Essen.query.count() == vorher + 1
+
+    def test_essen_import_mit_clear(self, client, db):
+        from app.models.essen import Essen
+
+        self._login_als_admin(client)
+        payload = (
+            '[{"name":"Nur-Dieses-Gericht","personenanzahl":1,"zutaten":["X"]'
+            ',"beschreibung":"Einzig","kochanweisung":"Backen","kochzeit":30}]'
+        )
+        resp = client.post(
+            "/foods/import",
+            data={
+                "json_file": (io.BytesIO(payload.encode("utf-8")), "essen.json"),
+                "clear_table": "on",
+            },
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert "Bestehende Rezepte wurden gelöscht" in resp.get_data(as_text=True)
+        assert Essen.query.count() == 1
+        assert Essen.query.first().name == "Nur-Dieses-Gericht"
 
 
 class TestEssenAPI:

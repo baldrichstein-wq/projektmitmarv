@@ -27,6 +27,36 @@
 
         <div class="content-wrapper">
             {% if role in ['user', 'admin'] %}
+            {% if role == 'admin' %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h2 class="mb-0">JSON-Import / Export</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <form method="post" action="{{ url_for('essen.importiere_essen_json') }}" enctype="multipart/form-data">
+                                <label for="json_file_essen" class="form-label">Rezepte aus JSON importieren</label>
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="json_file_essen" name="json_file" accept=".json,application/json" required>
+                                    <button type="submit" class="btn btn-primary">Importieren</button>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="clear_essen" name="clear_table">
+                                    <label class="form-check-label" for="clear_essen">
+                                        Tabelle vor Import leeren
+                                    </label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <a href="{{ url_for('essen.exportiere_essen_json') }}" class="btn btn-outline-primary">Alle Rezepte als JSON exportieren</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Neues Rezept hinzufügen -->
             <div class="card shadow-sm mb-5">
                 <div class="card-header">

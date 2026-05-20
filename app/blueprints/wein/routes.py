@@ -1,4 +1,6 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+import json
+
+from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 from flask_jwt_extended import jwt_required
 
 from app.extensions import db
@@ -6,6 +8,20 @@ from app.models.wein import Wein
 from app.utils import jwt_rolle
 
 bp = Blueprint("wein", __name__)
+
+
+def _parse_float(value, fallback: float) -> float:
+    try:
+        return float(str(value).replace(",", "."))
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _parse_int(value, fallback: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
 
 
 @bp.route("/wines", methods=["GET", "POST"])
@@ -85,18 +101,6 @@ def update_wine(wine_id):
                 form_data=form_data,
             )
 
-        def _parse_float(value: str, fallback: float) -> float:
-            try:
-                return float(str(value).replace(",", "."))
-            except (TypeError, ValueError):
-                return fallback
-
-        def _parse_int(value: str, fallback: int) -> int:
-            try:
-                return int(value)
-            except (TypeError, ValueError):
-                return fallback
-
         wein.name = name
         wein.liter = _parse_float(form_data["liter"], wein.liter)
         wein.zutaten = [
@@ -131,4 +135,109 @@ def loesche_wein(wine_id):
     db.session.delete(wein)
     db.session.commit()
     flash("Wein wurde erfolgreich gelöscht.", "success")
+    return redirect(url_for("wein.wein_verwalten"))
+
+
+@bp.route("/wines/export", methods=["GET"])
+@jwt_required(optional=True)
+def exportiere_wein_json():
+    if jwt_rolle() != "admin":
+        flash("Nur Administratoren dürfen Weine exportieren.", "danger")
+        return redirect(url_for("wein.wein_verwalten"))
+
+    daten = [
+        {
+            "name": eintrag.name,
+            "liter": eintrag.liter,
+            "zutaten": eintrag.zutaten or [],
+            "beschreibung": eintrag.beschreibung,
+            "brauanweisung": eintrag.brauanweisung,
+            "brauzeit": eintrag.brauzeit,
+            "alkoholgehalt": eintrag.alkoholgehalt,
+        }
+        for eintrag in Wein.query.order_by(Wein.id.asc()).all()
+    ]
+
+    return Response(
+        json.dumps(daten, ensure_ascii=False, indent=2),
+        mimetype="application/json",
+        headers={"Content-Disposition": "attachment; filename=wein_export.json"},
+    )
+
+
+@bp.route("/wines/import", methods=["POST"])
+@jwt_required(optional=True)
+def importiere_wein_json():
+    if jwt_rolle() != "admin":
+        flash("Nur Administratoren dürfen Weine importieren.", "danger")
+        return redirect(url_for("wein.wein_verwalten"))
+
+    datei = request.files.get("json_file")
+    if not datei or not datei.filename:
+        flash("Bitte wähle eine JSON-Datei aus.", "warning")
+        return redirect(url_for("wein.wein_verwalten"))
+
+    try:
+        roh_daten = json.load(datei.stream)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        flash("Ungültiges JSON-Format.", "danger")
+        return redirect(url_for("wein.wein_verwalten"))
+
+    if isinstance(roh_daten, dict):
+        eintraege = roh_daten.get("items", [])
+    else:
+        eintraege = roh_daten
+
+    if not isinstance(eintraege, list):
+        flash("JSON muss eine Liste von Weinen enthalten.", "danger")
+        return redirect(url_for("wein.wein_verwalten"))
+
+    clear_table = request.form.get("clear_table") == "on"
+    if clear_table:
+        db.session.query(Wein).delete()
+        db.session.commit()
+        flash("Bestehende Weine wurden gelöscht.", "info")
+
+    importiert = 0
+    uebersprungen = 0
+
+    for eintrag in eintraege:
+        if not isinstance(eintrag, dict):
+            uebersprungen += 1
+            continue
+
+        name = str(eintrag.get("name", "")).strip()
+        if not name:
+            uebersprungen += 1
+            continue
+
+        zutaten = eintrag.get("zutaten", [])
+        if isinstance(zutaten, str):
+            zutaten = [z.strip() for z in zutaten.split(",") if z.strip()]
+        elif isinstance(zutaten, list):
+            zutaten = [str(z).strip() for z in zutaten if str(z).strip()]
+        else:
+            zutaten = []
+
+        wein = Wein(
+            name=name,
+            liter=_parse_float(eintrag.get("liter", 5), 5.0),
+            zutaten=zutaten,
+            beschreibung=str(eintrag.get("beschreibung", "") or "").strip(),
+            brauanweisung=str(eintrag.get("brauanweisung", "") or "").strip(),
+            brauzeit=_parse_int(eintrag.get("brauzeit", 0), 0),
+            alkoholgehalt=_parse_float(eintrag.get("alkoholgehalt", 0), 0.0),
+        )
+        db.session.add(wein)
+        importiert += 1
+
+    if importiert > 0:
+        db.session.commit()
+        flash(f"{importiert} Weine wurden importiert.", "success")
+    else:
+        flash("Es wurden keine gültigen Weine importiert.", "warning")
+
+    if uebersprungen > 0:
+        flash(f"{uebersprungen} Einträge wurden übersprungen.", "warning")
+
     return redirect(url_for("wein.wein_verwalten"))

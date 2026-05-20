@@ -1,3 +1,5 @@
+import io
+
 from tests.conftest import auth_header, login_als
 
 
@@ -134,6 +136,97 @@ class TestWeinHTML:
         resp = client.post("/wines/9999/delete", follow_redirects=True)
         assert resp.status_code == 200
         assert "Wein nicht gefunden" in resp.get_data(as_text=True)
+
+    def test_wein_export_json(self, client):
+        self._login_als_admin(client)
+        resp = client.get("/wines/export")
+        assert resp.status_code == 200
+        assert resp.mimetype == "application/json"
+        assert "Test-Wein" in resp.get_data(as_text=True)
+
+    def test_wein_import_json(self, client, db):
+        from app.models.wein import Wein
+
+        self._login_als_admin(client)
+        payload = (
+            '[{"name":"Import-Wein","liter":7.5,"zutaten":["Trauben"],'
+            '"beschreibung":"Importiert","brauanweisung":"Mischen",'
+            '"brauzeit":6,"alkoholgehalt":11.0}]'
+        )
+        resp = client.post(
+            "/wines/import",
+            data={"json_file": (io.BytesIO(payload.encode("utf-8")), "wein.json")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert Wein.query.filter_by(name="Import-Wein").first() is not None
+
+    def test_wein_export_json_nur_admin(self, client):
+        self._login_als_user(client)
+        resp = client.get("/wines/export", follow_redirects=True)
+        assert resp.status_code == 200
+        assert "Nur Administratoren dürfen Weine exportieren" in resp.get_data(
+            as_text=True
+        )
+
+    def test_wein_import_json_nur_admin(self, client, db):
+        from app.models.wein import Wein
+
+        vorher = Wein.query.count()
+        self._login_als_user(client)
+        payload = '[{"name":"Nicht-erlaubt"}]'
+        resp = client.post(
+            "/wines/import",
+            data={"json_file": (io.BytesIO(payload.encode("utf-8")), "wein.json")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert "Nur Administratoren dürfen Weine importieren" in resp.get_data(
+            as_text=True
+        )
+        assert Wein.query.count() == vorher
+
+    def test_wein_import_additiv(self, client, db):
+        from app.models.wein import Wein
+
+        vorher = Wein.query.count()
+        self._login_als_admin(client)
+        payload = (
+            '[{"name":"Zusatz-Wein","liter":3.0,"zutaten":["Beere"]'
+            ',"beschreibung":"Neu","brauanweisung":"Gären","brauzeit":4,"alkoholgehalt":10.0}]'
+        )
+        resp = client.post(
+            "/wines/import",
+            data={"json_file": (io.BytesIO(payload.encode("utf-8")), "wein.json")},
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert Wein.query.count() == vorher + 1
+
+    def test_wein_import_mit_clear(self, client, db):
+        from app.models.wein import Wein
+
+        self._login_als_admin(client)
+        payload = (
+            '[{"name":"Nur-Dieser-Wein","liter":10.0,"zutaten":["Y"]'
+            ',"beschreibung":"Einzig","brauanweisung":"Lagern","brauzeit":8,"alkoholgehalt":15.0}]'
+        )
+        resp = client.post(
+            "/wines/import",
+            data={
+                "json_file": (io.BytesIO(payload.encode("utf-8")), "wein.json"),
+                "clear_table": "on",
+            },
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert "Bestehende Weine wurden gelöscht" in resp.get_data(as_text=True)
+        assert Wein.query.count() == 1
+        assert Wein.query.first().name == "Nur-Dieser-Wein"
 
 
 class TestWeinAPI:

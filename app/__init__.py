@@ -1,4 +1,5 @@
 import os
+import json
 
 from flask import Flask, flash, jsonify, redirect, request, url_for
 from flask_jwt_extended import get_jwt, unset_jwt_cookies
@@ -74,6 +75,8 @@ def create_app(config_name: str | None = None) -> Flask:
 
         db.create_all()
         _seed_datenbank()
+        if app.config.get("AUTOIMPORT_ON_STARTUP", True):
+            _autoimport_rezepte_aus_json(app)
 
     return app
 
@@ -174,3 +177,148 @@ def _seed_datenbank() -> None:
         db.session.add(beispiel_wein)
 
     db.session.commit()
+
+
+def _autoimport_rezepte_aus_json(app: Flask) -> None:
+    basis = os.path.abspath(os.path.join(app.root_path, ".."))
+    import_ordner = os.path.join(basis, app.config.get("AUTOIMPORT_FOLDER", "import"))
+
+    essen_pfad = os.path.join(import_ordner, "essen.json")
+    wein_pfad = os.path.join(import_ordner, "wein.json")
+
+    essen_resultat = _importiere_essen_datei(essen_pfad)
+    wein_resultat = _importiere_wein_datei(wein_pfad)
+    db.session.commit()
+
+    _log_autoimport_resultat(app, "Essen", essen_pfad, essen_resultat)
+    _log_autoimport_resultat(app, "Wein", wein_pfad, wein_resultat)
+
+
+def _lade_json_liste(dateipfad: str) -> list[dict] | None:
+    if not os.path.exists(dateipfad):
+        return None
+
+    try:
+        with open(dateipfad, "r", encoding="utf-8") as f:
+            daten = json.load(f)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+
+    if isinstance(daten, dict):
+        daten = daten.get("items", [])
+
+    if not isinstance(daten, list):
+        return []
+
+    return [eintrag for eintrag in daten if isinstance(eintrag, dict)]
+
+
+def _log_autoimport_resultat(app: Flask, typ: str, pfad: str, resultat: dict) -> None:
+    status = resultat.get("status")
+    if status == "ok":
+        app.logger.info(
+            "Autoimport %s aus %s: %s importiert, %s uebersprungen.",
+            typ,
+            pfad,
+            resultat.get("importiert", 0),
+            resultat.get("uebersprungen", 0),
+        )
+        return
+
+    app.logger.warning(
+        "Autoimport %s aus %s uebersprungen (%s).",
+        typ,
+        pfad,
+        status,
+    )
+
+
+def _to_int(value, fallback: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _to_float(value, fallback: float) -> float:
+    try:
+        return float(str(value).replace(",", "."))
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _to_zutaten(value) -> list[str]:
+    if isinstance(value, str):
+        return [z.strip() for z in value.split(",") if z.strip()]
+    if isinstance(value, list):
+        return [str(z).strip() for z in value if str(z).strip()]
+    return []
+
+
+def _importiere_essen_datei(dateipfad: str) -> dict:
+    from .models.essen import Essen
+
+    eintraege = _lade_json_liste(dateipfad)
+    if eintraege is None:
+        return {"status": "datei-fehlt-oder-ungueltig", "importiert": 0, "uebersprungen": 0}
+    if not eintraege:
+        return {"status": "ok", "importiert": 0, "uebersprungen": 0}
+
+    db.session.query(Essen).delete()
+    importiert = 0
+    uebersprungen = 0
+
+    for eintrag in eintraege:
+        name = str(eintrag.get("name", "")).strip()
+        if not name:
+            uebersprungen += 1
+            continue
+
+        db.session.add(
+            Essen(
+                name=name,
+                personenanzahl=_to_int(eintrag.get("personenanzahl", 2), 2),
+                zutaten=_to_zutaten(eintrag.get("zutaten", [])),
+                beschreibung=str(eintrag.get("beschreibung", "") or "").strip(),
+                kochanweisung=str(eintrag.get("kochanweisung", "") or "").strip(),
+                kochzeit=_to_int(eintrag.get("kochzeit", 0), 0),
+            )
+        )
+        importiert += 1
+
+    return {"status": "ok", "importiert": importiert, "uebersprungen": uebersprungen}
+
+
+def _importiere_wein_datei(dateipfad: str) -> dict:
+    from .models.wein import Wein
+
+    eintraege = _lade_json_liste(dateipfad)
+    if eintraege is None:
+        return {"status": "datei-fehlt-oder-ungueltig", "importiert": 0, "uebersprungen": 0}
+    if not eintraege:
+        return {"status": "ok", "importiert": 0, "uebersprungen": 0}
+
+    db.session.query(Wein).delete()
+    importiert = 0
+    uebersprungen = 0
+
+    for eintrag in eintraege:
+        name = str(eintrag.get("name", "")).strip()
+        if not name:
+            uebersprungen += 1
+            continue
+
+        db.session.add(
+            Wein(
+                name=name,
+                liter=_to_float(eintrag.get("liter", 5), 5.0),
+                zutaten=_to_zutaten(eintrag.get("zutaten", [])),
+                beschreibung=str(eintrag.get("beschreibung", "") or "").strip(),
+                brauanweisung=str(eintrag.get("brauanweisung", "") or "").strip(),
+                brauzeit=_to_int(eintrag.get("brauzeit", 0), 0),
+                alkoholgehalt=_to_float(eintrag.get("alkoholgehalt", 0), 0.0),
+            )
+        )
+        importiert += 1
+
+    return {"status": "ok", "importiert": importiert, "uebersprungen": uebersprungen}

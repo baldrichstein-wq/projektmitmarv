@@ -46,6 +46,8 @@ class Config:
             }
         }
     }
+    AUTOIMPORT_ON_STARTUP: bool = os.getenv("AUTOIMPORT_ON_STARTUP", "1") == "1"
+    AUTOIMPORT_FOLDER: str = os.getenv("AUTOIMPORT_FOLDER", "import")
 
 
 class DevelopmentConfig(Config):
@@ -58,6 +60,7 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED: bool = False
     SECRET_KEY: str = "test-secret"
     JWT_SECRET_KEY: str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # 32 Zeichen für JWT
+    AUTOIMPORT_ON_STARTUP: bool = False
 
 
 class ProductionConfig(Config):
