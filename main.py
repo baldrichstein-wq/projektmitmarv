@@ -43,12 +43,9 @@ essen.init_db()
 
 @app.route('/')
 def home():
-    # Vereinheitlichung: Wenn keine Rolle in der Session, dann 'gast'
     role = session.get('user_role', 'gast')
     name = session.get('user_name', 'Gast')
     return render_template('index.html', name=name, role=role)
-
-
 
 @app.route('/ueber_uns')
 def ueber_uns():
@@ -72,7 +69,7 @@ def verwalte_benutzer():
 
     users = benutzer.get_all_users()
     return render_template('benutzer.html', users=users, role=role)
-# Hier wird die Lösch-Funktion aus deinem benutzer-Modul aufgerufen
+
 @app.route('/benutzer/loeschen/<int:user_id>', methods=['POST'])
 def loesche_benutzer(user_id):
     role = session.get('user_role', 'gast')
@@ -80,7 +77,6 @@ def loesche_benutzer(user_id):
         flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer löschen.', 'danger')
         return redirect(url_for('home'))
 
-    # Hier nur noch "success" abfangen (kein Entpacken mehr)
     if benutzer.loesche_benutzer(user_id):
         flash('Benutzer wurde erfolgreich gelöscht.', 'success')
     else:
@@ -188,6 +184,7 @@ def wein_verwalten():
 
     weine = wine.get_all_wines()
     return render_template('wein.html', wines=weine, role=role)
+
 @app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
 def loesche_wein(wine_id):
     role = session.get('user_role', 'gast')
@@ -195,7 +192,6 @@ def loesche_wein(wine_id):
         flash('Nur Administratoren können Weine löschen.', 'danger')
         return redirect(url_for('wein_verwalten'))
     
-    # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
     if wine.delete_wine(wine_id):
         flash('Wein wurde erfolgreich gelöscht.', 'success')
     else:
@@ -226,13 +222,23 @@ def essen_verwalten():
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        personen = request.form.get('personenanzahl', '4')
+        if not name:
+            flash('Der Name des Essens darf nicht leer sein.', 'danger')
+            return redirect(url_for('essen_verwalten'))
+
+        # Absicherung gegen ValueError:
+        try:
+            personen = int(request.form.get('personenanzahl', '4'))
+            zeit = int(request.form.get('kochzeit', '0'))
+        except ValueError:
+            flash('Personenanzahl und Kochzeit müssen Zahlen sein!', 'danger')
+            return redirect(url_for('essen_verwalten'))
+        
         zutaten = request.form.get('zutaten', '').split(',')
         desc = request.form.get('description', '').strip()
         anw = request.form.get('kochanweisung', '').strip()
-        zeit = request.form.get('kochzeit', '0')
         
-        essen.add_essen(name, int(personen), [z.strip() for z in zutaten], desc, anw, int(zeit))
+        essen.add_essen(name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
         flash('Essen gespeichert.', 'success')
         return redirect(url_for('essen_verwalten'))
 
@@ -264,34 +270,6 @@ def bearbeite_essen(essen_id):
         return redirect(url_for('essen_verwalten'))
 
     return render_template('essen_edit.html', essen=aktuelles_essen, role=role)
-
-def get_essen(essen_id):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT id, name, personenanzahl, zutaten, description, kochanweisung, kochzeit FROM essen WHERE id = ?', (essen_id,))
-        row = cursor.fetchone()
-    if row:
-        return {
-            'id': row[0],
-            'name': row[1],
-            'personenanzahl': row[2],
-            'ingredients': json.loads(row[3]),
-            'description': row[4],
-            'kochanweisung': row[5],
-            'kochzeit': row[6],
-        }
-    return None
-
-def update_essen(essen_id, name, personenanzahl, zutaten, description, kochanweisung, kochzeit):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE essen
-            SET name = ?, personenanzahl = ?, zutaten = ?, description = ?, kochanweisung = ?, kochzeit = ?
-            WHERE id = ?
-        ''', (name, personenanzahl, json.dumps(zutaten), description, kochanweisung, kochzeit, essen_id))
-        conn.commit()
-        return cursor.rowcount > 0
     
 @app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
 def loesche_essen(essen_id):
@@ -300,7 +278,6 @@ def loesche_essen(essen_id):
         flash('Nur Administratoren können Rezepte löschen.', 'danger')
         return redirect(url_for('essen_verwalten'))
     
-    # Hier wird die Lösch-Funktion aus deinem wine-Modul aufgerufen
     if essen.delete_essen(essen_id):
         flash('Rezept wurde erfolgreich gelöscht.', 'success')
     else:
@@ -317,7 +294,6 @@ def suche():
     gefundene_speisen = []
 
     if query:
-        # Weine durchsuchen (Name, Beschreibung und jede einzelne Zutat)
         alle_weine = wine.get_all_wines()
         for w in alle_weine:
             zutaten_string = " ".join(w['ingredients']).lower()
@@ -326,7 +302,6 @@ def suche():
                 query in zutaten_string):
                 gefundene_weine.append(w)
 
-        # Speisen durchsuchen (Name, Beschreibung und jede einzelne Zutat)
         alle_speisen = essen.get_all_essen()
         for e in alle_speisen:
             zutaten_string = " ".join(e['zutaten']).lower()

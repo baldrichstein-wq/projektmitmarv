@@ -82,7 +82,7 @@ def add_essen(name, personenanzahl, Zutaten, description, kochanweisung, Kochzei
             Kochzeit
         ))
         conn.commit()
-        return cursor.lastrowid
+        return cursor.rowcount > 0
 
 def get_all_essen():
     conn = sqlite3.connect(DB_FILE)
@@ -101,8 +101,8 @@ def get_all_essen():
             'zutaten': json.loads(row[3]),
             'description': row[4],
             'kochanweisung': row[5],
-            'kochzeit_min': minuten_roh,
-            'kochzeit': format_kochzeit(minuten_roh)
+            'Kochzeit_min': minuten_roh,
+            'Kochzeit': format_kochzeit(minuten_roh)
         })
     return essen_liste
 
@@ -122,8 +122,8 @@ def get_essen(essen_id):
             'zutaten': json.loads(row[3]),
             'description': row[4],
             'kochanweisung': row[5],
-            'kochzeit_min': minuten_roh,
-            'kochzeit': format_kochzeit(minuten_roh)
+            'Kochzeit_min': minuten_roh,
+            'Kochzeit': format_kochzeit(minuten_roh)
         }
     return None
 
@@ -134,12 +134,12 @@ def delete_essen(essen_id):
         conn.commit()
         return cursor.rowcount > 0
 
-def update_essen(essen_id, name, personenanzahl, zutaten, description, kochanweisung, kochzeit):
+def update_essen(essen_id, name, personenanzahl, Zutaten, description, kochanweisung, Kochzeit):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE essen
-            SET name = ?, personenanzahl = ?, zutaten = ?, description = ?, kochanweisung = ?, kochzeit = ?
+            SET name = ?, personenanzahl = ?, Zutaten = ?, description = ?, kochanweisung = ?, Kochzeit = ?
             WHERE id = ?
         ''', (
             name,
