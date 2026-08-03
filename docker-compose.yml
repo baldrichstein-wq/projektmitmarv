@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: rezeptbuch-backend
+    ports:
+      - "5005:5005"
+    environment:
+      - PORT=5005
+      - DATABASE_URL=postgresql://admin:adminpass@postgres:5432/benutzerdb
+      - MONGO_URI=mongodb://root:mongopass@mongodb:27017/
+    depends_on:
+      - postgres
+      - mongodb
+    volumes:
+      - backend_data:/app
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: rezeptbuch-postgres
+    environment:
+      - POSTGRES_DB=benutzerdb
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=adminpass
+    ports:
+      - "5435:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6.0
+    container_name: rezeptbuch-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=mongopass
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: rezeptbuch-frontend
+    ports:
+      - "8082:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_data:
+  pg_data:
+  mongo_data:

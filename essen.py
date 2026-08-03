@@ -1,13 +1,13 @@
-import sqlite3
-import json
+import os
+import pymongo
+from pymongo import MongoClient
 
-DB_FILE = 'essen.db'
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://root:mongopass@localhost:27017/')
 
-# Standardrezept für die Initialisierung
 PREDEFINED_Essen = {
     'name': 'Kaiserliches Kräuter-Kaninchen mit Rosmarin',
     'personenanzahl': 4,
-    'Zutaten': [
+    'zutaten': [
         '0,5 kg Kaninchen',
         '4 Zweige frischer Rosmarin',
         '2 Zweige Thymian',
@@ -18,7 +18,7 @@ PREDEFINED_Essen = {
     ],
     'description': 'Ein köstliches Gericht, das die Aromen von frischen Kräutern und zartem Kaninchen vereint. Perfekt für ein festliches Mahl oder einen besonderen Anlass.',
     'kochanweisung': 'Das Fleisch mit Salz, Pfeffer und dem zerdrückten Knoblauch kräftig einmassieren. Die Kräuter fein hacken und unter die Gewürzmischung rühren. Das Kaninchen damit bestreichen und mindestens 2 Stunden ziehen lassen. Bei mittlerer Hitze im Ofen goldbraun braten, bis es nach Sieg riecht!',
-    'kochzeit': 120, # In Minuten angegeben (2 Stunden)
+    'kochzeit': 120,
 }
 
 def format_kochzeit(minuten_gesamt):
@@ -37,118 +37,95 @@ def format_kochzeit(minuten_gesamt):
     
     return " ".join(parts)
 
+# Reuse MongoClient connection pool globally
+_mongo_client = None
+
+def get_collection():
+    global _mongo_client
+    if _mongo_client is None:
+        _mongo_client = MongoClient(MONGO_URI)
+    db = _mongo_client['rezeptdb']
+    return db['essen']
+
+def get_next_id(collection):
+    highest = collection.find_one(sort=[("id", -1)])
+    if highest and 'id' in highest:
+        return highest["id"] + 1
+    return 1
+
 def init_db():
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS essen (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                personenanzahl INTEGER,
-                Zutaten TEXT NOT NULL,
-                description TEXT,
-                kochanweisung TEXT,
-                kochzeit INTEGER
-            )
-        ''')
+    col = get_collection()
+    if col.count_documents({}) == 0:
+        doc = PREDEFINED_Essen.copy()
+        doc['id'] = 1
+        col.insert_one(doc)
 
-        cursor.execute('SELECT COUNT(*) FROM essen')
-        if cursor.fetchone()[0] == 0:
-            cursor.execute('''
-                INSERT INTO essen (name, personenanzahl, Zutaten, description, kochanweisung, kochzeit)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                PREDEFINED_Essen['name'],
-                PREDEFINED_Essen['personenanzahl'],
-                json.dumps(PREDEFINED_Essen['Zutaten']),
-                PREDEFINED_Essen['description'],
-                PREDEFINED_Essen['kochanweisung'],
-                PREDEFINED_Essen['kochzeit']
-            ))
-            conn.commit()
-
-def add_essen(name, personenanzahl, Zutaten, description, kochanweisung, kochzeit):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO essen (name, personenanzahl, Zutaten, description, kochanweisung, kochzeit)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            name,
-            personenanzahl,
-            json.dumps(Zutaten),
-            description,
-            kochanweisung,
-            kochzeit
-        ))
-        conn.commit()
-        return cursor.rowcount > 0
+def add_essen(name, personenanzahl, zutaten, description, kochanweisung, kochzeit):
+    col = get_collection()
+    new_id = get_next_id(col)
+    doc = {
+        'id': new_id,
+        'name': name,
+        'personenanzahl': personenanzahl,
+        'zutaten': zutaten,
+        'description': description,
+        'kochanweisung': kochanweisung,
+        'kochzeit': kochzeit
+    }
+    result = col.insert_one(doc)
+    return result.acknowledged
 
 def get_all_essen():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, name, personenanzahl, Zutaten, description, kochanweisung, kochzeit FROM essen ORDER BY id')
-    rows = cursor.fetchall()
-    conn.close()
-    
+    col = get_collection()
+    cursor = col.find({}, {'_id': 0}).sort('id', 1)
     essen_liste = []
-    for row in rows:
-        minuten_roh = row[6]
+    for doc in cursor:
+        minuten_roh = doc.get('kochzeit', 0)
         essen_liste.append({
-            'id': row[0],
-            'name': row[1],
-            'personenanzahl': row[2],
-            'zutaten': json.loads(row[3]),
-            'description': row[4],
-            'kochanweisung': row[5],
+            'id': doc.get('id'),
+            'name': doc.get('name'),
+            'personenanzahl': doc.get('personenanzahl'),
+            'zutaten': doc.get('zutaten', []),
+            'description': doc.get('description'),
+            'kochanweisung': doc.get('kochanweisung'),
             'kochzeit_min': minuten_roh,
             'kochzeit': format_kochzeit(minuten_roh)
         })
     return essen_liste
 
 def get_essen(essen_id):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, name, personenanzahl, Zutaten, description, kochanweisung, kochzeit FROM essen WHERE id = ?', (essen_id,))
-    row = cursor.fetchone()
-    conn.close()
-    
-    if row:
-        minuten_roh = row[6]
+    col = get_collection()
+    doc = col.find_one({'id': int(essen_id)}, {'_id': 0})
+    if doc:
+        minuten_roh = doc.get('kochzeit', 0)
         return {
-            'id': row[0],
-            'name': row[1],
-            'personenanzahl': row[2],
-            'zutaten': json.loads(row[3]),
-            'description': row[4],
-            'kochanweisung': row[5],
+            'id': doc.get('id'),
+            'name': doc.get('name'),
+            'personenanzahl': doc.get('personenanzahl'),
+            'zutaten': doc.get('zutaten', []),
+            'description': doc.get('description'),
+            'kochanweisung': doc.get('kochanweisung'),
             'kochzeit_min': minuten_roh,
             'kochzeit': format_kochzeit(minuten_roh)
         }
     return None
 
 def delete_essen(essen_id):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM essen WHERE id = ?', (essen_id,))
-        conn.commit()
-        return cursor.rowcount > 0
+    col = get_collection()
+    result = col.delete_one({'id': int(essen_id)})
+    return result.deleted_count > 0
 
-def update_essen(essen_id, name, personenanzahl, Zutaten, description, kochanweisung, kochzeit):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE essen
-            SET name = ?, personenanzahl = ?, Zutaten = ?, description = ?, kochanweisung = ?, kochzeit = ?
-            WHERE id = ?
-        ''', (
-            name,
-            personenanzahl,
-            json.dumps(Zutaten),
-            description,
-            kochanweisung,
-            kochzeit,
-            essen_id
-        ))
-        conn.commit()
-        return cursor.rowcount > 0
+def update_essen(essen_id, name, personenanzahl, zutaten, description, kochanweisung, kochzeit):
+    col = get_collection()
+    result = col.update_one(
+        {'id': int(essen_id)},
+        {'$set': {
+            'name': name,
+            'personenanzahl': personenanzahl,
+            'zutaten': zutaten,
+            'description': description,
+            'kochanweisung': kochanweisung,
+            'kochzeit': kochzeit
+        }}
+    )
+    return result.modified_count > 0 or result.matched_count > 0

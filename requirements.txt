@@ -1,2 +1,5 @@
 flask==3.0.0        # oder fastapi, django, whatever du nutzt
 gunicorn==21.2.0    # Production-Server
+flask-cors>=4.0.0
+psycopg2-binary>=2.9.0
+pymongo>=4.0.0

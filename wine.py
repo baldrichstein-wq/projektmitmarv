@@ -1,7 +1,8 @@
-import sqlite3
-import json
+import os
+import pymongo
+from pymongo import MongoClient
 
-DB_FILE = 'wines.db'
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://root:mongopass@localhost:27017/')
 
 PREDEFINED_WINE = {
     'name': 'Holunder Johannisbeer Wein',
@@ -23,119 +24,95 @@ PREDEFINED_WINE = {
     'alcohol_content': 15.0
 }
 
-def init_db():
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS wines (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                liter TEXT NOT NULL,
-                ingredients TEXT NOT NULL,
-                description TEXT,
-                brewing_instructions TEXT,
-                brewing_time INTEGER,
-                alcohol_content REAL
-            )
-        ''')
+# Reuse MongoClient connection pool globally
+_mongo_client = None
 
-        cursor.execute('SELECT COUNT(*) FROM wines')
-        if cursor.fetchone()[0] == 0:
-            cursor.execute('''
-                INSERT INTO wines (name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                PREDEFINED_WINE['name'],
-                PREDEFINED_WINE['liter'],
-                json.dumps(PREDEFINED_WINE['ingredients']),
-                PREDEFINED_WINE['description'],
-                PREDEFINED_WINE['brewing_instructions'],
-                PREDEFINED_WINE['brewing_time'],
-                PREDEFINED_WINE['alcohol_content'],
-            ))
-            conn.commit()
+def get_collection():
+    global _mongo_client
+    if _mongo_client is None:
+        _mongo_client = MongoClient(MONGO_URI)
+    db = _mongo_client['rezeptdb']
+    return db['wines']
+
+def get_next_id(collection):
+    highest = collection.find_one(sort=[("id", -1)])
+    if highest and 'id' in highest:
+        return highest["id"] + 1
+    return 1
+
+def init_db():
+    col = get_collection()
+    if col.count_documents({}) == 0:
+        doc = PREDEFINED_WINE.copy()
+        doc['id'] = 1
+        col.insert_one(doc)
 
 def add_wine(name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO wines (name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            name,
-            liter,
-            json.dumps(ingredients),
-            description,
-            brewing_instructions,
-            brewing_time,
-            alcohol_content,
-        ))
-        conn.commit()
-        return cursor.lastrowid
+    col = get_collection()
+    new_id = get_next_id(col)
+    doc = {
+        'id': new_id,
+        'name': name,
+        'liter': liter,
+        'ingredients': ingredients,
+        'description': description,
+        'brewing_instructions': brewing_instructions,
+        'brewing_time': brewing_time,
+        'alcohol_content': alcohol_content
+    }
+    col.insert_one(doc)
+    return new_id
 
 def get_all_wines():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    # Wichtig: liter muss im SELECT enthalten sein
-    cursor.execute('SELECT id, name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content FROM wines ORDER BY id')
-    rows = cursor.fetchall()
-    conn.close()
+    col = get_collection()
+    cursor = col.find({}, {'_id': 0}).sort('id', 1)
     wines = []
-    for row in rows:
+    for doc in cursor:
         wines.append({
-            'id': row[0],
-            'name': row[1],
-            'liter': row[2],
-            'ingredients': json.loads(row[3]),
-            'description': row[4],
-            'brewing_instructions': row[5],
-            'brewing_time': row[6],
-            'alcohol_content': row[7],
+            'id': doc.get('id'),
+            'name': doc.get('name'),
+            'liter': doc.get('liter'),
+            'ingredients': doc.get('ingredients', []),
+            'description': doc.get('description'),
+            'brewing_instructions': doc.get('brewing_instructions'),
+            'brewing_time': doc.get('brewing_time'),
+            'alcohol_content': doc.get('alcohol_content'),
         })
     return wines
 
 def get_wine_by_id(wine_id):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content FROM wines WHERE id = ?', (wine_id,))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
+    col = get_collection()
+    doc = col.find_one({'id': int(wine_id)}, {'_id': 0})
+    if doc:
         return {
-            'id': row[0],
-            'name': row[1],
-            'liter': row[2],
-            'ingredients': json.loads(row[3]),
-            'description': row[4],
-            'brewing_instructions': row[5],
-            'brewing_time': row[6],
-            'alcohol_content': row[7],
+            'id': doc.get('id'),
+            'name': doc.get('name'),
+            'liter': doc.get('liter'),
+            'ingredients': doc.get('ingredients', []),
+            'description': doc.get('description'),
+            'brewing_instructions': doc.get('brewing_instructions'),
+            'brewing_time': doc.get('brewing_time'),
+            'alcohol_content': doc.get('alcohol_content'),
         }
     return None
 
 def delete_wine(wine_id):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM wines WHERE id = ?', (wine_id,))
-        conn.commit()
-        return cursor.rowcount > 0
+    col = get_collection()
+    result = col.delete_one({'id': int(wine_id)})
+    return result.deleted_count > 0
 
 def update_wine(wine_id, name, liter, ingredients, description, brewing_instructions, brewing_time, alcohol_content):
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE wines
-            SET name = ?, liter = ?, ingredients = ?, description = ?, brewing_instructions = ?, brewing_time = ?, alcohol_content = ?
-            WHERE id = ?
-        ''', (
-            name,
-            liter,
-            json.dumps(ingredients),
-            description,
-            brewing_instructions,
-            brewing_time,
-            alcohol_content,
-            wine_id
-        ))
-        conn.commit()
-        return cursor.rowcount > 0
+    col = get_collection()
+    result = col.update_one(
+        {'id': int(wine_id)},
+        {'$set': {
+            'name': name,
+            'liter': liter,
+            'ingredients': ingredients,
+            'description': description,
+            'brewing_instructions': brewing_instructions,
+            'brewing_time': brewing_time,
+            'alcohol_content': alcohol_content
+        }}
+    )
+    return result.modified_count > 0 or result.matched_count > 0

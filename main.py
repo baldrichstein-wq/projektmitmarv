@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, jsonify, request, session
+from flask_cors import CORS
 from datetime import timedelta
 import os
 import re
@@ -6,9 +7,16 @@ import benutzer
 import wine
 import essen
 
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__)
 app.secret_key = 'supersecretkey123' 
 app.permanent_session_lifetime = timedelta(days=7)
+
+# Enable CORS for development
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5173", "http://127.0.0.1:5173",
+    "http://localhost:5174", "http://127.0.0.1:5174",
+    "http://localhost:5175", "http://127.0.0.1:5175"
+])
 
 # --- UTILITY FUNKTIONEN ---
 
@@ -39,253 +47,251 @@ benutzer.init_db()
 wine.init_db()
 essen.init_db()
 
-# --- ROUTEN ---
+# --- REST API ROUTEN ---
 
-@app.route('/')
-def home():
-    role = session.get('user_role', 'gast')
-    name = session.get('user_name', 'Gast')
-    return render_template('index.html', name=name, role=role)
+@app.route('/api/me')
+def get_current_user():
+    return jsonify({
+        'logged_in': 'user_email' in session,
+        'email': session.get('user_email'),
+        'name': session.get('user_name', 'Gast'),
+        'role': session.get('user_role', 'gast')
+    })
 
-@app.route('/ueber_uns')
-def ueber_uns():
-    role = session.get('user_role', 'gast')
-    return render_template('ueber-uns.html', role=role)
+@app.route('/api/anmeldung', methods=['POST'])
+def anmeldung():
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    password = data.get('password', '').strip()
 
-@app.route('/benutzer', methods=['GET', 'POST'])
+    user = benutzer.benutzer_anmelden(email, password)
+    if user:
+        session.permanent = True
+        session['user_email'] = email
+        session['user_name'] = user.get('name', email)
+        session['user_role'] = user.get('role', 'benutzer')
+        return jsonify({
+            'success': True,
+            'message': f"Willkommen {session['user_name']}!",
+            'user': {
+                'email': email,
+                'name': session['user_name'],
+                'role': session['user_role']
+            }
+        })
+    else:
+        return jsonify({'success': False, 'message': 'Ungültige Anmeldedaten.'}), 401
+
+@app.route('/api/abmeldung', methods=['POST'])
+def abmeldung():
+    session.clear()
+    return jsonify({'success': True, 'message': 'Erfolgreich abgemeldet.'})
+
+@app.route('/api/registrierung', methods=['POST'])
+def registrierung():
+    data = request.json or {}
+    name = data.get('name', '').strip()
+    email = data.get('email', '').strip()
+    password = data.get('password', '').strip()
+
+    if not name or not email or not password:
+        return jsonify({'success': False, 'message': 'Bitte alle Felder ausfüllen.'}), 400
+
+    success, message = benutzer.benutzer_anlegen(name, email, password)
+    return jsonify({'success': success, 'message': message}), 200 if success else 400
+
+@app.route('/api/benutzer', methods=['GET', 'POST'])
 def verwalte_benutzer():
     role = session.get('user_role', 'gast')
     if role != 'admin':
-        flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer verwalten.', 'danger')
-        return redirect(url_for('home'))
+        return jsonify({'success': False, 'message': 'Zugriff verweigert.'}), 403
 
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
+        data = request.json or {}
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
         success, message = benutzer.benutzer_anlegen(name, email, password)
-        flash(message, 'success' if success else 'danger')
-        return redirect(url_for('verwalte_benutzer'))
+        return jsonify({'success': success, 'message': message}), 200 if success else 400
 
     users = benutzer.get_all_users()
-    return render_template('benutzer.html', users=users, role=role)
+    return jsonify({'success': True, 'users': users})
 
-@app.route('/benutzer/loeschen/<int:user_id>', methods=['POST'])
+@app.route('/api/benutzer/loeschen/<int:user_id>', methods=['DELETE'])
 def loesche_benutzer(user_id):
     role = session.get('user_role', 'gast')
     if role != 'admin':
-        flash('Zugriff verweigert: Nur Administratoren dürfen Benutzer löschen.', 'danger')
-        return redirect(url_for('home'))
+        return jsonify({'success': False, 'message': 'Zugriff verweigert.'}), 403
 
     if benutzer.loesche_benutzer(user_id):
-        flash('Benutzer wurde erfolgreich gelöscht.', 'success')
+        return jsonify({'success': True, 'message': 'Benutzer wurde erfolgreich gelöscht.'})
     else:
-        flash('Fehler beim Löschen des Benutzers (ID existiert evtl. nicht).', 'danger')
-        
-    return redirect(url_for('verwalte_benutzer'))
+        return jsonify({'success': False, 'message': 'Fehler beim Löschen des Benutzers.'}), 400
 
-@app.route('/anmeldung', methods=['GET', 'POST'])
-def anmeldung():
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
-
-        user = benutzer.benutzer_anmelden(email, password)
-        if user:
-            session.permanent = True
-            session['user_email'] = email
-            session['user_name'] = user.get('name', email)
-            session['user_role'] = user.get('role', 'benutzer')
-            flash(f"Willkommen {session['user_name']}!", 'success')
-            return redirect(url_for('home'))
-        else:
-            flash('Ungültige Anmeldedaten.', 'danger')
-
-    return render_template('anmeldung.html', role=session.get('user_role', 'benutzer'))
-
-@app.route('/abmeldung')
-def abmeldung():
-    session.clear()
-    flash('Erfolgreich abgemeldet.', 'success')
-    return redirect(url_for('home'))
-
-@app.route('/registrierung', methods=['GET', 'POST'])
-def registrierung():
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
-
-        if not name or not email or not password:
-            flash('Bitte alle Felder ausfüllen.', 'danger')
-            return redirect(url_for('registrierung'))
-
-        success, message = benutzer.benutzer_anlegen(name, email, password)
-        
-        if success:
-            flash('Registrierung erfolgreich! Du kannst dich jetzt anmelden.', 'success')
-            return redirect(url_for('anmeldung'))
-        else:
-            flash(message, 'danger')
-
-    return render_template('registrierung.html', role=session.get('user_role', 'gast'))
-
-@app.route('/wein_edit/<int:wine_id>', methods=['GET', 'POST'])
-def update_wine(wine_id):
-    get_wine_by_id = wine.get_wine_by_id(wine_id)
-    if not get_wine_by_id:
-        flash('Wein nicht gefunden.', 'danger')
-        return redirect(url_for('wein_verwalten'))
-    
-    role = session.get('user_role', 'gast')
-    if role != 'benutzer' and role != 'admin':
-        flash('Nur Administratoren und Benutzer können Weine bearbeiten.', 'danger')
-        return redirect(url_for('wein_verwalten'))
-
-    if request.method == 'POST':
-        name = request.form.get('name')
-        liter = request.form.get('liter', '5')
-        ingredients = request.form.get('ingredients', '').split(',')
-        description = request.form.get('description')
-        instructions = request.form.get('brewing_instructions')
-        time = request.form.get('brewing_time')
-        alcohol = request.form.get('alcohol_content')
-
-        if not name:
-            flash('Fehler: Der Name des Weins darf nicht leer sein!', 'danger')
-            return redirect(url_for('update_wine', wine_id=wine_id))
-
-        wine.update_wine(wine_id, name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
-        flash(f'Wein "{name}" wurde aktualisiert!', 'success')
-        return redirect(url_for('wein_verwalten'))
-
-    wine_data = wine.get_wine_by_id(wine_id)
-    return render_template('wein_edit.html', wine=wine_data, role=role)
-
-@app.route('/wein', methods=['GET', 'POST'])
-def wein_verwalten():
-    role = session.get('user_role', 'gast')
-    if role != 'benutzer' and role != 'admin':
-        flash('Bitte melde dich an, um Weine zu sehen.', 'danger')
-        return redirect(url_for('anmeldung'))
-
-    if request.method == 'POST':
-        name = request.form.get('name')
-        liter = request.form.get('liter', '5')
-        ingredients = request.form.get('ingredients').split(',')
-        description = request.form.get('description')
-        instructions = request.form.get('brewing_instructions')
-        time = request.form.get('brewing_time')
-        alcohol = request.form.get('alcohol_content')
-
-        wine.add_wine(name, liter, [i.strip() for i in ingredients], description, instructions, time, alcohol)
-        flash(f'Wein "{name}" hinzugefügt!', 'success')
-        return redirect(url_for('wein_verwalten'))
-
-    weine = wine.get_all_wines()
-    return render_template('wein.html', wines=weine, role=role)
-
-@app.route('/wein/loeschen/<int:wine_id>', methods=['POST'])
-def loesche_wein(wine_id):
-    role = session.get('user_role', 'gast')
-    if role != 'admin':
-        flash('Nur Administratoren können Weine löschen.', 'danger')
-        return redirect(url_for('wein_verwalten'))
-    
-    if wine.delete_wine(wine_id):
-        flash('Wein wurde erfolgreich gelöscht.', 'success')
-    else:
-        flash('Fehler beim Löschen des Weins.', 'danger')
-        
-    return redirect(url_for('wein_verwalten'))
-
-@app.route('/benutzer/rolle_aendern/<int:user_id>', methods=['POST'])
+@app.route('/api/benutzer/rolle_aendern/<int:user_id>', methods=['POST'])
 def rolle_update(user_id):
     if session.get('user_role') != 'admin':
-        flash('Nicht autorisiert.', 'danger')
-        return redirect(url_for('home'))
+        return jsonify({'success': False, 'message': 'Nicht autorisiert.'}), 403
     
-    neue_rolle = request.form.get('rolle')
+    data = request.json or {}
+    neue_rolle = data.get('rolle')
     if benutzer.rolle_aendern(user_id, neue_rolle):
-        flash(f'Rolle für Benutzer ID {user_id} wurde auf {neue_rolle} aktualisiert.', 'success')
+        return jsonify({'success': True, 'message': f'Rolle wurde auf {neue_rolle} aktualisiert.'})
     else:
-        flash('Fehler beim Aktualisieren der Rolle.', 'danger')
-    
-    return redirect(url_for('verwalte_benutzer'))
+        return jsonify({'success': False, 'message': 'Fehler beim Aktualisieren der Rolle.'}), 400
 
-@app.route('/essen', methods=['GET', 'POST'])
+@app.route('/api/wein', methods=['GET', 'POST'])
+def wein_verwalten():
+    role = session.get('user_role', 'gast')
+    if role == 'gast':
+        return jsonify({'success': False, 'message': 'Bitte melde dich an.'}), 401
+
+    if request.method == 'POST':
+        data = request.json or {}
+        name = data.get('name')
+        liter = data.get('liter', '5')
+        ingredients = data.get('ingredients', [])
+        if isinstance(ingredients, str):
+            ingredients = [i.strip() for i in ingredients.split(',') if i.strip()]
+        description = data.get('description')
+        instructions = data.get('brewing_instructions')
+        time = data.get('brewing_time')
+        alcohol = data.get('alcohol_content')
+
+        if not name:
+            return jsonify({'success': False, 'message': 'Der Name des Weins darf nicht leer sein.'}), 400
+
+        wine.add_wine(name, liter, ingredients, description, instructions, time, alcohol)
+        return jsonify({'success': True, 'message': f'Wein "{name}" hinzugefügt!'})
+
+    weine = wine.get_all_wines()
+    return jsonify({'success': True, 'wines': weine})
+
+@app.route('/api/wein/<int:wine_id>', methods=['GET', 'PUT'])
+def update_wine(wine_id):
+    wine_data = wine.get_wine_by_id(wine_id)
+    if not wine_data:
+        return jsonify({'success': False, 'message': 'Wein nicht gefunden.'}), 404
+    
+    role = session.get('user_role', 'gast')
+    if role == 'gast':
+        return jsonify({'success': False, 'message': 'Bitte melde dich an.'}), 401
+
+    if request.method == 'PUT':
+        data = request.json or {}
+        name = data.get('name')
+        liter = data.get('liter', '5')
+        ingredients = data.get('ingredients', [])
+        if isinstance(ingredients, str):
+            ingredients = [i.strip() for i in ingredients.split(',') if i.strip()]
+        description = data.get('description')
+        instructions = data.get('brewing_instructions')
+        time = data.get('brewing_time')
+        alcohol = data.get('alcohol_content')
+
+        if not name:
+            return jsonify({'success': False, 'message': 'Der Name des Weins darf nicht leer sein.'}), 400
+
+        wine.update_wine(wine_id, name, liter, ingredients, description, instructions, time, alcohol)
+        return jsonify({'success': True, 'message': f'Wein "{name}" wurde aktualisiert!'})
+
+    return jsonify({'success': True, 'wine': wine_data})
+
+@app.route('/api/wein/loeschen/<int:wine_id>', methods=['DELETE'])
+def loesche_wein(wine_id):
+    role = session.get('user_role', 'gast')
+    if role != 'admin' and role != 'benutzer':
+        return jsonify({'success': False, 'message': 'Nicht autorisiert.'}), 403
+    
+    if wine.delete_wine(wine_id):
+        return jsonify({'success': True, 'message': 'Wein wurde erfolgreich gelöscht.'})
+    else:
+        return jsonify({'success': False, 'message': 'Fehler beim Löschen des Weins.'}), 400
+
+@app.route('/api/essen', methods=['GET', 'POST'])
 def essen_verwalten():
     role = session.get('user_role', 'gast')
     if role == 'gast':
-        flash('Bitte melden Sie sich an.', 'danger')
-        return redirect(url_for('anmeldung'))
+        return jsonify({'success': False, 'message': 'Bitte melden Sie sich an.'}), 401
 
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
+        data = request.json or {}
+        name = data.get('name', '').strip()
         if not name:
-            flash('Der Name des Essens darf nicht leer sein.', 'danger')
-            return redirect(url_for('essen_verwalten'))
+            return jsonify({'success': False, 'message': 'Der Name des Essens darf nicht leer sein.'}), 400
 
-        # Absicherung gegen ValueError:
         try:
-            personen = int(request.form.get('personenanzahl', '4'))
-            zeit = int(request.form.get('kochzeit', '0'))
+            personen = int(data.get('personenanzahl', '4'))
+            zeit = int(data.get('kochzeit', '0'))
         except ValueError:
-            flash('Personenanzahl und kochzeit müssen Zahlen sein!', 'danger')
-            return redirect(url_for('essen_verwalten'))
+            return jsonify({'success': False, 'message': 'Personenanzahl und Kochzeit müssen Zahlen sein!'}), 400
         
-        zutaten = request.form.get('zutaten', '').split(',')
-        desc = request.form.get('description', '').strip()
-        anw = request.form.get('kochanweisung', '').strip()
+        zutaten = data.get('zutaten', [])
+        if isinstance(zutaten, str):
+            zutaten = [z.strip() for z in zutaten.split(',') if z.strip()]
+        desc = data.get('description', '').strip()
+        anw = data.get('kochanweisung', '').strip()
         
-        essen.add_essen(name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
-        flash('Essen gespeichert.', 'success')
-        return redirect(url_for('essen_verwalten'))
+        essen.add_essen(name, personen, zutaten, desc, anw, zeit)
+        return jsonify({'success': True, 'message': 'Essen gespeichert.'})
 
     speisen_liste = essen.get_all_essen()
-    return render_template('essen.html', essen=speisen_liste, role=role)
+    return jsonify({'success': True, 'essen': speisen_liste})
 
-@app.route('/essen/bearbeiten/<int:essen_id>', methods=['GET', 'POST'])
+@app.route('/api/essen/<int:essen_id>', methods=['GET', 'PUT'])
 def bearbeite_essen(essen_id):
     role = session.get('user_role', 'gast')
     if role == 'gast':
-        flash('Bitte melde dich an.', 'danger')
-        return redirect(url_for('anmeldung'))
+        return jsonify({'success': False, 'message': 'Bitte melde dich an.'}), 401
 
     aktuelles_essen = essen.get_essen(essen_id)
     if not aktuelles_essen:
-        flash('Rezept nicht gefunden.', 'danger')
-        return redirect(url_for('essen_verwalten'))
+        return jsonify({'success': False, 'message': 'Rezept nicht gefunden.'}), 404
 
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        personen = int(request.form.get('personenanzahl') or 1)
-        zutaten = request.form.get('zutaten', '').split(',')
-        desc = request.form.get('description', '').strip()
-        anw = request.form.get('kochanweisung', '').strip()
-        zeit = int(request.form.get('kochzeit') or 0)
+    if request.method == 'PUT':
+        data = request.json or {}
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({'success': False, 'message': 'Der Name des Essens darf nicht leer sein.'}), 400
+            
+        try:
+            personen = int(data.get('personenanzahl', '1'))
+            zeit = int(data.get('kochzeit', '0'))
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Personenanzahl und Kochzeit müssen Zahlen sein!'}), 400
+            
+        zutaten = data.get('zutaten', [])
+        if isinstance(zutaten, str):
+            zutaten = [z.strip() for z in zutaten.split(',') if z.strip()]
+        desc = data.get('description', '').strip()
+        anw = data.get('kochanweisung', '').strip()
 
-        essen.update_essen(essen_id, name, personen, [z.strip() for z in zutaten], desc, anw, zeit)
-        flash(f'Rezept "{name}" wurde aktualisiert.', 'success')
-        return redirect(url_for('essen_verwalten'))
+        essen.update_essen(essen_id, name, personen, zutaten, desc, anw, zeit)
+        return jsonify({'success': True, 'message': f'Rezept "{name}" wurde aktualisiert.'})
 
-    return render_template('essen_edit.html', essen=aktuelles_essen, role=role)
+    return jsonify({'success': True, 'essen': aktuelles_essen})
     
-@app.route('/essen/loeschen/<int:essen_id>', methods=['POST'])
+@app.route('/api/essen/loeschen/<int:essen_id>', methods=['DELETE'])
 def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')
-    if role != 'admin':
-        flash('Nur Administratoren können Rezepte löschen.', 'danger')
-        return redirect(url_for('essen_verwalten'))
+    if role != 'admin' and role != 'benutzer':
+        return jsonify({'success': False, 'message': 'Nicht autorisiert.'}), 403
     
     if essen.delete_essen(essen_id):
-        flash('Rezept wurde erfolgreich gelöscht.', 'success')
+        return jsonify({'success': True, 'message': 'Rezept wurde erfolgreich gelöscht.'})
     else:
-        flash('Fehler beim Löschen des Rezepts.', 'danger')
-        
-    return redirect(url_for('essen_verwalten'))
+        return jsonify({'success': False, 'message': 'Fehler beim Löschen des Rezepts.'}), 400
 
-@app.route('/suche')
+@app.route('/api/essen/skalieren', methods=['POST'])
+def skalieren():
+    data = request.json or {}
+    zutaten = data.get('zutaten', [])
+    original_menge = data.get('original_menge', 1)
+    ziel_menge = data.get('ziel_menge', 1)
+    skalierte = skaliere_zutaten(zutaten, original_menge, ziel_menge)
+    return jsonify({'success': True, 'zutaten': skalierte})
+
+@app.route('/api/suche')
 def suche():
     role = session.get('user_role', 'gast')
     query = request.args.get('q', '').strip().lower()
@@ -310,12 +316,14 @@ def suche():
                 query in zutaten_string):
                 gefundene_speisen.append(e)
 
-    return render_template('suche.html', 
-                           query=query, 
-                           weine=gefundene_weine, 
-                           speisen=gefundene_speisen, 
-                           role=role)
+    return jsonify({
+        'success': True,
+        'query': query,
+        'weine': gefundene_weine,
+        'speisen': gefundene_speisen,
+        'role': role
+    })
 
 if __name__ == '__main__':
      port = int(os.environ.get('PORT', 5000))
-     app.run(host='0.0.0.0' ,port=port, debug=True)
+     app.run(host='0.0.0.0', port=port, debug=True)
