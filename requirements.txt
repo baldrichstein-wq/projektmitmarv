@@ -1,5 +1,9 @@
-flask==3.0.0        # oder fastapi, django, whatever du nutzt
-gunicorn==21.2.0    # Production-Server
-flask-cors>=4.0.0
-psycopg2-binary>=2.9.0
-pymongo>=4.0.0
+# GEAENDERT 06.08.2026 (Stefan): Versionen fest gepinnt statt teils mit ">=" (flask-cors,
+# psycopg2-binary, pymongo) -- sonst kann ein Build auf AWS/NAS eine andere Version
+# installieren als lokal getestet wurde. Ausserdem den alten "oder fastapi, django,
+# whatever"-Kommentar entfernt (nicht mehr relevant, Projekt nutzt fest Flask).
+flask==3.0.0
+gunicorn==21.2.0
+flask-cors==4.0.0
+psycopg2-binary==2.9.9
+pymongo==4.6.1

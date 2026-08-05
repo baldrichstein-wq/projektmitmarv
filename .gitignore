@@ -218,4 +218,15 @@ __marimo__/
 .streamlit/secrets.toml
 .DS_Store
 .vscode/settings.json
+
+# NEU 06.08.2026 (Stefan): *.db ergaenzt -- benutzer.db/essen.db/wines.db waren bisher
+# versehentlich in Git eingecheckt (enthielten u.a. Passwort-Hashes). Projekt nutzt nur
+# noch PostgreSQL + MongoDB, SQLite-Dateien sollen nie wieder committet werden.
+*.db
 *.db-*
+
+# NEU 06.08.2026 (Stefan): .env enthaelt echte Secrets (DB-Passwoerter, SECRET_KEY) und darf
+# nie ins Repo -- nur die Vorlage .env.example wird versioniert.
+.env
+.env.*
+!.env.example

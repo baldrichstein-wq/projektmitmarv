@@ -1,5 +1,5 @@
-version: '3.8'
-
+# GEAENDERT 06.08.2026 (Stefan): "version: '3.8'" entfernt (veraltetes Attribut, wird von
+# aktuellen Docker-Compose-Versionen ignoriert und als deprecated gemeldet).
 services:
   backend:
     build: .
@@ -7,25 +7,38 @@ services:
     ports:
       - "5005:5005"
     environment:
+      # GEAENDERT 06.08.2026 (Stefan): Secret Key, Debug-Flag, CORS-Origins und
+      # Cookie-Sicherheit kommen jetzt aus der .env-Datei statt hartkodiert/fehlend zu sein.
       - PORT=5005
-      - DATABASE_URL=postgresql://admin:adminpass@postgres:5432/benutzerdb
-      - MONGO_URI=mongodb://root:mongopass@mongodb:27017/
+      - SECRET_KEY=${SECRET_KEY}
+      - FLASK_DEBUG=${FLASK_DEBUG:-false}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
+      # GEAENDERT 06.08.2026 (Stefan): Zugangsdaten fuer Postgres/MongoDB kamen vorher
+      # direkt hier im Klartext (admin:adminpass, root:mongopass) -- jetzt aus .env.
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/
     depends_on:
       - postgres
       - mongodb
-    volumes:
-      - backend_data:/app
+    # ENTFERNT 06.08.2026 (Stefan): "volumes: - backend_data:/app" gab es hier vorher.
+    # Das ueberlagerte den im Image per COPY eingebauten Anwendungscode mit einem (anfangs
+    # leeren) Docker-Volume -- der Container haette main.py im schlimmsten Fall gar nicht
+    # gefunden bzw. veralteten Code aus einem frueheren Build weiterverwendet. Code gehoert
+    # ins Image, nicht in ein Volume.
     restart: unless-stopped
 
   postgres:
     image: postgres:15-alpine
     container_name: rezeptbuch-postgres
     environment:
-      - POSTGRES_DB=benutzerdb
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=adminpass
-    ports:
-      - "5435:5432"
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    # ENTFERNT 06.08.2026 (Stefan): "ports: - 5435:5432" gab es hier vorher und machte die
+    # Datenbank direkt vom Host (und je nach Firewall/Security-Group ggf. aus dem Internet)
+    # erreichbar. Postgres muss nur intern vom backend-Container erreichbar sein, dafuer
+    # reicht das Docker-interne Netzwerk -- kein Host-Port noetig.
     volumes:
       - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -34,10 +47,11 @@ services:
     image: mongo:6.0
     container_name: rezeptbuch-mongodb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=mongopass
-    ports:
-      - "27018:27017"
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    # ENTFERNT 06.08.2026 (Stefan): "ports: - 27018:27017" gab es hier vorher, aus demselben
+    # Grund wie bei postgres oben entfernt (keine Notwendigkeit, MongoDB vom Host aus
+    # erreichbar zu machen).
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
@@ -52,6 +66,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  backend_data:
   pg_data:
   mongo_data:
+  # ENTFERNT 06.08.2026 (Stefan): "backend_data:" Volume-Deklaration geloescht, da das
+  # zugehoerige Volume oben beim backend-Service entfernt wurde (siehe Kommentar dort).

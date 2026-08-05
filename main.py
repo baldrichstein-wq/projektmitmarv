@@ -8,15 +8,47 @@ import wine
 import essen
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey123' 
+
+# GEAENDERT 06.08.2026 (Stefan): Secret Key war vorher hartkodiert ('supersecretkey123') im Code
+# und damit fuer jeden mit Repo-Zugriff bekannt -> Session-Cookies waeren faelschbar gewesen
+# (z.B. sich selbst zum Admin machen). Kommt jetzt aus der Umgebungsvariable SECRET_KEY (.env).
+# Nur im expliziten Debug-Modus gibt es einen unsicheren Fallback fuer lokale Entwicklung ohne .env.
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if os.environ.get('FLASK_DEBUG', 'false').lower() == 'true':
+        SECRET_KEY = 'dev-only-insecure-key'
+    else:
+        raise RuntimeError(
+            'SECRET_KEY Umgebungsvariable ist nicht gesetzt. '
+            'In Produktion (AWS/NAS) muss ein zufaelliger, geheimer Wert gesetzt werden, '
+            'z.B. per: python -c "import secrets; print(secrets.token_hex(32))"'
+        )
+app.secret_key = SECRET_KEY
 app.permanent_session_lifetime = timedelta(days=7)
 
-# Enable CORS for development
-CORS(app, supports_credentials=True, origins=[
-    "http://localhost:5173", "http://127.0.0.1:5173",
-    "http://localhost:5174", "http://127.0.0.1:5174",
-    "http://localhost:5175", "http://127.0.0.1:5175"
-])
+# NEU 06.08.2026 (Stefan): Cookie-Sicherheit war vorher gar nicht konfiguriert.
+# SESSION_COOKIE_SECURE: 'true' sobald HTTPS aktiv ist, damit das Session-Cookie nur ueber
+# verschluesselte Verbindungen gesendet wird (in .env aktuell 'false', da AWS/NAS-Domain/TLS
+# noch nicht final ist -- vor dem echten Deployment auf 'true' umstellen!).
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'false').lower() == 'true'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+
+# GEAENDERT 06.08.2026 (Stefan): CORS-Origins waren vorher hartkodiert auf localhost-Dev-Ports.
+# Damit haette in Produktion (AWS/NAS) das echte Frontend die API gar nicht ansprechen koennen
+# (Browser blockiert Cross-Origin-Requests ohne passenden CORS-Header). Kommt jetzt aus
+# CORS_ORIGINS (.env, kommagetrennte Liste); Fallback nur fuer lokale Entwicklung ohne .env.
+_cors_env = os.environ.get('CORS_ORIGINS')
+if _cors_env:
+    CORS_ORIGINS = [o.strip() for o in _cors_env.split(',') if o.strip()]
+else:
+    CORS_ORIGINS = [
+        "http://localhost:5173", "http://127.0.0.1:5173",
+        "http://localhost:5174", "http://127.0.0.1:5174",
+        "http://localhost:5175", "http://127.0.0.1:5175"
+    ]
+
+CORS(app, supports_credentials=True, origins=CORS_ORIGINS)
 
 # --- UTILITY FUNKTIONEN ---
 
@@ -48,6 +80,12 @@ wine.init_db()
 essen.init_db()
 
 # --- REST API ROUTEN ---
+
+# NEU 06.08.2026 (Stefan): Health-Check-Endpoint fuer Deployment-Monitoring
+# (z.B. AWS Load Balancer Health Check, NAS/Docker Container-Healthcheck).
+@app.route('/api/health')
+def health():
+    return jsonify({'status': 'ok'})
 
 @app.route('/api/me')
 def get_current_user():
@@ -324,6 +362,12 @@ def suche():
         'role': role
     })
 
+# GEAENDERT 06.08.2026 (Stefan): debug=True war vorher fest eingebaut. Der Flask-Debugger
+# erlaubt bei einem unbehandelten Fehler Remote Code Execution, sobald der Server im Netz
+# erreichbar ist -- hochkritisch fuer AWS/NAS. Kommt jetzt aus FLASK_DEBUG (Default: aus).
+# Hinweis: Dieser Block laeuft nur bei "python main.py" (lokale Entwicklung); im Dockerfile
+# startet Gunicorn main:app direkt und dieser Block wird nicht ausgefuehrt.
 if __name__ == '__main__':
-     port = int(os.environ.get('PORT', 5000))
-     app.run(host='0.0.0.0', port=port, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)
