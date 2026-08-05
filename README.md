@@ -36,6 +36,15 @@ Sicherheits-/Deployment-Fixes:
 
 Offene Punkte fuer spaeter (nicht in diesem Schritt umgesetzt): Connection-Pooling fuer PostgreSQL, atomische ID-Vergabe in MongoDB (wine.py/essen.py), Rate-Limiting fuer den Login, Ownership-Pruefung beim Loeschen von Rezepten.
 
+Lokaler Testlauf (docker compose) am selben Tag:
+- Stack lokal per "docker compose up --build" gestartet, um die Aenderungen im Browser zu pruefen
+- Zwei alte, lokale Docker-Volumes (pg_data, mongo_data) enthielten noch Passwoerter aus fruehreren Testlaeufen mit den alten, hartkodierten Zugangsdaten -> Authentifizierung schlug fehl. Volumes geloescht (nur lokale Testdaten, keine echten Nutzerdaten) und Stack neu gestartet, danach liefen alle vier Container (backend, frontend, postgres, mongodb) fehlerfrei
+- Health-Check (/api/health), Login (/api/anmeldung) und Frontend (Port 8082) erfolgreich getestet
+- 20 Beispiel-Essensrezepte und 10 Beispiel-Weinrezepte ueber die bestehende REST-API (/api/essen, /api/wein) angelegt, damit die Anwendung mit realistischen Daten ausprobiert werden kann
+- Hinweis: Rezepte liegen in den Docker-Volumes pg_data/mongo_data und bleiben bei "docker compose stop/down" (ohne -v) sowie beim Schliessen von Docker Desktop erhalten; nur "docker compose down -v" bzw. ein manuelles Loeschen der Volumes entfernt sie
+
+Ausfuehrliches Schritt-fuer-Schritt-Protokoll dieser gesamten Session: docs/protokoll-2026-08-06-deployment-sicherheit.md
+
 
 
 -main.py Einbindung der wine.py, benutzer.py und essen.py mit Flask um die für die HTML zu gewährleisten David Woche 1 und 2
