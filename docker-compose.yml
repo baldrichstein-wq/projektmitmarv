@@ -4,8 +4,9 @@ services:
   backend:
     build: .
     container_name: rezeptbuch-backend
-    ports:
-      - "5005:5005"
+    # GEAENDERT 07.08.2026 (Stefan): Host-Port-Mapping entfernt -- das Backend ist jetzt nur
+    # noch ueber den "proxy"-Service (Caddy) von aussen erreichbar, nicht mehr direkt auf
+    # Port 5005. Intern im Docker-Netzwerk bleibt es unter "backend:5005" ansprechbar.
     environment:
       # GEAENDERT 06.08.2026 (Stefan): Secret Key, Debug-Flag, CORS-Origins und
       # Cookie-Sicherheit kommen jetzt aus der .env-Datei statt hartkodiert/fehlend zu sein.
@@ -14,6 +15,9 @@ services:
       - FLASK_DEBUG=${FLASK_DEBUG:-false}
       - CORS_ORIGINS=${CORS_ORIGINS}
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
+      # NEU 07.08.2026 (Stefan): Anzahl Gunicorn-Worker konfigurierbar (siehe Dockerfile).
+      # Default 2, damit es auch auf kleinen Instanzen (z.B. AWS t3.micro, 1 GiB RAM) passt.
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-2}
       # GEAENDERT 06.08.2026 (Stefan): Zugangsdaten fuer Postgres/MongoDB kamen vorher
       # direkt hier im Klartext (admin:adminpass, root:mongopass) -- jetzt aus .env.
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -59,10 +63,33 @@ services:
   frontend:
     build: ./frontend
     container_name: rezeptbuch-frontend
-    ports:
-      - "8082:80"
+    # GEAENDERT 07.08.2026 (Stefan): Host-Port-Mapping (vorher "8082:80") entfernt, aus dem
+    # gleichen Grund wie beim backend-Service -- Caddy ist jetzt der einzige oeffentliche
+    # Zugang, das Frontend bleibt intern unter "frontend:80" erreichbar.
     depends_on:
       - backend
+    restart: unless-stopped
+
+  # NEU 07.08.2026 (Stefan): Reverse-Proxy mit automatischem HTTPS (Let's Encrypt) ueber Caddy.
+  # Einziger Service mit Host-Port-Mapping -- terminiert TLS und leitet /api/* an backend,
+  # alles andere an frontend weiter (siehe Caddyfile). DOMAIN kommt aus der .env; ohne echte
+  # Domain (lokale Entwicklung) faellt Caddy auf ein selbstsigniertes "localhost"-Zertifikat
+  # zurueck.
+  proxy:
+    image: caddy:2-alpine
+    container_name: rezeptbuch-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
     restart: unless-stopped
 
 volumes:
@@ -70,3 +97,7 @@ volumes:
   mongo_data:
   # ENTFERNT 06.08.2026 (Stefan): "backend_data:" Volume-Deklaration geloescht, da das
   # zugehoerige Volume oben beim backend-Service entfernt wurde (siehe Kommentar dort).
+  # NEU 07.08.2026 (Stefan): Volumes fuer Caddy, damit ausgestellte Zertifikate einen
+  # Container-Neustart ueberleben (kein taeglicher Neuabruf bei Let's Encrypt noetig).
+  caddy_data:
+  caddy_config:

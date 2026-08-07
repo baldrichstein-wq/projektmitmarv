@@ -230,3 +230,8 @@ __marimo__/
 .env
 .env.*
 !.env.example
+
+# NEU 07.08.2026 (Stefan): persoenliche/lokale Doku-Dateien, die kontospezifische Details
+# (AWS-Kontodaten, Domains, Tokens) enthalten koennen -- bewusst nicht im Repo.
+docs/aws-setup-eu-central-1.md
+docs/protokoll-2026-08-06-deployment-sicherheit.md

@@ -45,6 +45,36 @@ Lokaler Testlauf (docker compose) am selben Tag:
 
 Ausfuehrliches Schritt-fuer-Schritt-Protokoll dieser gesamten Session: docs/protokoll-2026-08-06-deployment-sicherheit.md
 
+07.08.2026 Stefan - Offene Punkte aus der Analyse vom 06.08. behoben (bis auf die tote
+RECHTE_PRO_ROLE-Tabelle in benutzer.py und fehlende Eingabevalidierung bei liter/brewing_time/
+alcohol_content in main.py -- bewusst zurueckgestellt) sowie AWS-Vorbereitung:
+
+- Caddyfile (neu) + docker-compose.yml: neuer proxy-Service (Caddy) uebernimmt Port 80/443 und
+  automatisches HTTPS via Let's Encrypt (Domain ueber Env-Variable DOMAIN, Fallback "localhost"
+  mit selbstsigniertem Zertifikat fuer lokale Tests). backend und frontend haben keine direkten
+  Host-Port-Mappings mehr, sind nur noch ueber den Proxy erreichbar.
+- benutzer.py: PostgreSQL-Verbindungs-Pool (psycopg2.pool.SimpleConnectionPool) statt einer neuen
+  Verbindung pro Request/Funktionsaufruf.
+- wine.py, essen.py: atomare ID-Vergabe ueber eine MongoDB-"counters"-Collection
+  (find_one_and_update mit $inc) statt "hoechste ID + 1" (war eine Race Condition bei
+  gleichzeitigen Schreibzugriffen).
+- main.py: Rate-Limiting auf /api/anmeldung (10 Versuche/Minute pro IP, ueber flask-limiter)
+  gegen Brute-Force-Logins.
+- wine.py, essen.py, main.py: Ownership-Pruefung beim Loeschen -- neues Feld created_by
+  (E-Mail des Erstellers) wird beim Anlegen von Wein/Essen gespeichert; beim Loeschen darf
+  admin weiterhin alles loeschen, benutzer aber nur noch eigene Eintraege (Eintraege ohne
+  erfassten Ersteller, z.B. Altdaten, sind dann nur noch fuer admin loeschbar).
+- Dockerfile, docker-compose.yml: Gunicorn-Worker-Anzahl ueber WEB_CONCURRENCY (.env)
+  konfigurierbar statt fest auf 4 -- Default jetzt 2, passend fuer kleine AWS-Instanzen
+  (z.B. t3.micro mit 1 GiB RAM).
+- requirements.txt: flask-limiter ergaenzt. .env.example: DOMAIN und WEB_CONCURRENCY ergaenzt.
+- Neue, bewusst nicht versionierte Datei docs/aws-setup-eu-central-1.md (in .gitignore) mit
+  sehr detaillierter Schritt-fuer-Schritt-Anleitung fuer die AWS-Sandbox (eu-central-1,
+  15 EUR/Monat-Limit, gelegentlicher statt Dauerbetrieb).
+
+Bewusst nicht umgesetzt: Bereinigung der Git-Historie von den alten .db-Dateien (waere ein
+destruktiver Schritt mit Force-Push, auf Wunsch zurueckgestellt).
+
 
 
 -main.py Einbindung der wine.py, benutzer.py und essen.py mit Flask um die für die HTML zu gewährleisten David Woche 1 und 2

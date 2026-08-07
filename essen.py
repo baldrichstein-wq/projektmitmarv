@@ -1,6 +1,6 @@
 import os
 import pymongo
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://root:mongopass@localhost:27017/')
 
@@ -25,16 +25,16 @@ def format_kochzeit(minuten_gesamt):
     """Wandelt Minuten in ein 'X Std. Y Min.' Format um."""
     if not minuten_gesamt or minuten_gesamt <= 0:
         return "0 Min."
-    
+
     stunden = minuten_gesamt // 60
     minuten = minuten_gesamt % 60
-    
+
     parts = []
     if stunden > 0:
         parts.append(f"{stunden} Std.")
     if minuten > 0:
         parts.append(f"{minuten} Min.")
-    
+
     return " ".join(parts)
 
 # Reuse MongoClient connection pool globally
@@ -47,20 +47,41 @@ def get_collection():
     db = _mongo_client['rezeptdb']
     return db['essen']
 
+# GEAENDERT 07.08.2026 (Stefan): siehe ausfuehrlicher Kommentar in wine.py, get_next_id().
+# Gleiches Problem (Race Condition bei "hoechste ID + 1"), gleiche Loesung (atomares $inc
+# ueber eine gemeinsame "counters"-Collection).
 def get_next_id(collection):
-    highest = collection.find_one(sort=[("id", -1)])
-    if highest and 'id' in highest:
-        return highest["id"] + 1
-    return 1
+    db = collection.database
+    counters = db['counters']
+    counter_id = collection.name
+    result = counters.find_one_and_update(
+        {'_id': counter_id},
+        {'$inc': {'seq': 1}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER
+    )
+    seq = result['seq']
+    if seq == 1:
+        highest = collection.find_one(sort=[("id", -1)])
+        if highest and highest.get('id', 0) >= seq:
+            seq = highest['id'] + 1
+            counters.update_one({'_id': counter_id}, {'$set': {'seq': seq}})
+    return seq
 
 def init_db():
     col = get_collection()
     if col.count_documents({}) == 0:
         doc = PREDEFINED_Essen.copy()
         doc['id'] = 1
+        doc['created_by'] = None
         col.insert_one(doc)
+        col.database['counters'].update_one(
+            {'_id': col.name}, {'$set': {'seq': 1}}, upsert=True
+        )
 
-def add_essen(name, personenanzahl, zutaten, description, kochanweisung, kochzeit):
+# GEAENDERT 07.08.2026 (Stefan): neuer Parameter created_by (E-Mail des anlegenden Nutzers),
+# analog zu wine.py -- fuer die Ownership-Pruefung beim Loeschen in main.py.
+def add_essen(name, personenanzahl, zutaten, description, kochanweisung, kochzeit, created_by=None):
     col = get_collection()
     new_id = get_next_id(col)
     doc = {
@@ -70,7 +91,8 @@ def add_essen(name, personenanzahl, zutaten, description, kochanweisung, kochzei
         'zutaten': zutaten,
         'description': description,
         'kochanweisung': kochanweisung,
-        'kochzeit': kochzeit
+        'kochzeit': kochzeit,
+        'created_by': created_by
     }
     result = col.insert_one(doc)
     return result.acknowledged
@@ -89,7 +111,8 @@ def get_all_essen():
             'description': doc.get('description'),
             'kochanweisung': doc.get('kochanweisung'),
             'kochzeit_min': minuten_roh,
-            'kochzeit': format_kochzeit(minuten_roh)
+            'kochzeit': format_kochzeit(minuten_roh),
+            'created_by': doc.get('created_by'),
         })
     return essen_liste
 
@@ -106,7 +129,8 @@ def get_essen(essen_id):
             'description': doc.get('description'),
             'kochanweisung': doc.get('kochanweisung'),
             'kochzeit_min': minuten_roh,
-            'kochzeit': format_kochzeit(minuten_roh)
+            'kochzeit': format_kochzeit(minuten_roh),
+            'created_by': doc.get('created_by'),
         }
     return None
 

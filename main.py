@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import timedelta
 import os
 import re
@@ -8,6 +10,15 @@ import wine
 import essen
 
 app = Flask(__name__)
+
+# NEU 07.08.2026 (Stefan): Rate-Limiting gegen Brute-Force auf den Login (siehe anmeldung()
+# weiter unten, dort mit @limiter.limit(...) auf 10 Versuche/Minute pro IP begrenzt).
+# Hinweis: Der Standard-Speicher von Flask-Limiter ist In-Memory und damit PRO GUNICORN-WORKER-
+# PROZESS getrennt -- bei z.B. 2 Workern (WEB_CONCURRENCY) sind effektiv bis zu 2x so viele
+# Versuche moeglich, je nachdem welchen Worker der Request trifft. Fuer dieses Projekt (kleine,
+# einzelne EC2-Instanz) ausreichend; bei mehreren Instanzen/Hosts braeuchte es einen geteilten
+# Speicher (z.B. Redis) als Limiter-Backend.
+limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
 # GEAENDERT 06.08.2026 (Stefan): Secret Key war vorher hartkodiert ('supersecretkey123') im Code
 # und damit fuer jeden mit Repo-Zugriff bekannt -> Session-Cookies waeren faelschbar gewesen
@@ -97,6 +108,7 @@ def get_current_user():
     })
 
 @app.route('/api/anmeldung', methods=['POST'])
+@limiter.limit("10 per minute")
 def anmeldung():
     data = request.json or {}
     email = data.get('email', '').strip()
@@ -199,7 +211,10 @@ def wein_verwalten():
         if not name:
             return jsonify({'success': False, 'message': 'Der Name des Weins darf nicht leer sein.'}), 400
 
-        wine.add_wine(name, liter, ingredients, description, instructions, time, alcohol)
+        # NEU 07.08.2026 (Stefan): Ersteller mitspeichern -- wird fuer die Ownership-Pruefung
+        # beim Loeschen gebraucht (siehe loesche_wein() weiter unten).
+        wine.add_wine(name, liter, ingredients, description, instructions, time, alcohol,
+                      created_by=session.get('user_email'))
         return jsonify({'success': True, 'message': f'Wein "{name}" hinzugefügt!'})
 
     weine = wine.get_all_wines()
@@ -235,12 +250,24 @@ def update_wine(wine_id):
 
     return jsonify({'success': True, 'wine': wine_data})
 
+# GEAENDERT 07.08.2026 (Stefan): Vorher durfte jeder eingeloggte "benutzer" JEDEN Wein loeschen,
+# nicht nur seine eigenen. Jetzt: admin darf immer loeschen, benutzer nur eigene Eintraege
+# (created_by == eigene E-Mail). Weine ohne erfassten Ersteller (z.B. Altdaten von vor dieser
+# Aenderung, created_by ist dann None) koennen nur noch von admin geloescht werden -- sicherer
+# Default, statt sie weiterhin fuer jeden benutzer freizugeben.
 @app.route('/api/wein/loeschen/<int:wine_id>', methods=['DELETE'])
 def loesche_wein(wine_id):
     role = session.get('user_role', 'gast')
-    if role != 'admin' and role != 'benutzer':
+    if role not in ('admin', 'benutzer'):
         return jsonify({'success': False, 'message': 'Nicht autorisiert.'}), 403
-    
+
+    if role != 'admin':
+        wine_data = wine.get_wine_by_id(wine_id)
+        if not wine_data:
+            return jsonify({'success': False, 'message': 'Wein nicht gefunden.'}), 404
+        if wine_data.get('created_by') != session.get('user_email'):
+            return jsonify({'success': False, 'message': 'Du kannst nur eigene Weine löschen.'}), 403
+
     if wine.delete_wine(wine_id):
         return jsonify({'success': True, 'message': 'Wein wurde erfolgreich gelöscht.'})
     else:
@@ -269,8 +296,10 @@ def essen_verwalten():
             zutaten = [z.strip() for z in zutaten.split(',') if z.strip()]
         desc = data.get('description', '').strip()
         anw = data.get('kochanweisung', '').strip()
-        
-        essen.add_essen(name, personen, zutaten, desc, anw, zeit)
+
+        # NEU 07.08.2026 (Stefan): Ersteller mitspeichern -- fuer die Ownership-Pruefung beim
+        # Loeschen (siehe loesche_essen() weiter unten), analog zu wein_verwalten() oben.
+        essen.add_essen(name, personen, zutaten, desc, anw, zeit, created_by=session.get('user_email'))
         return jsonify({'success': True, 'message': 'Essen gespeichert.'})
 
     speisen_liste = essen.get_all_essen()
@@ -309,12 +338,22 @@ def bearbeite_essen(essen_id):
 
     return jsonify({'success': True, 'essen': aktuelles_essen})
     
+# GEAENDERT 07.08.2026 (Stefan): analog zu loesche_wein() oben -- admin darf immer loeschen,
+# benutzer nur eigene Rezepte (created_by == eigene E-Mail). Rezepte ohne erfassten Ersteller
+# (Altdaten) sind damit nur noch fuer admin loeschbar.
 @app.route('/api/essen/loeschen/<int:essen_id>', methods=['DELETE'])
 def loesche_essen(essen_id):
     role = session.get('user_role', 'gast')
-    if role != 'admin' and role != 'benutzer':
+    if role not in ('admin', 'benutzer'):
         return jsonify({'success': False, 'message': 'Nicht autorisiert.'}), 403
-    
+
+    if role != 'admin':
+        essen_data = essen.get_essen(essen_id)
+        if not essen_data:
+            return jsonify({'success': False, 'message': 'Rezept nicht gefunden.'}), 404
+        if essen_data.get('created_by') != session.get('user_email'):
+            return jsonify({'success': False, 'message': 'Du kannst nur eigene Rezepte löschen.'}), 403
+
     if essen.delete_essen(essen_id):
         return jsonify({'success': True, 'message': 'Rezept wurde erfolgreich gelöscht.'})
     else:

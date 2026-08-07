@@ -1,0 +1,12 @@
+# NEU 07.08.2026 (Stefan): Reverse-Proxy fuer automatisches HTTPS (Let's Encrypt).
+# {$DOMAIN} kommt aus der Umgebungsvariable DOMAIN (.env). Ohne gesetzte Domain faellt Caddy
+# auf "localhost" zurueck und nutzt dann ein lokales, selbstsigniertes Zertifikat (fuer lokale
+# Tests ausreichend, im Browser aber mit Warnung).
+{$DOMAIN:localhost} {
+    handle /api/* {
+        reverse_proxy backend:5005
+    }
+    handle {
+        reverse_proxy frontend:80
+    }
+}
