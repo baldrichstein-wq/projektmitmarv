@@ -88,7 +88,6 @@ export default function App() {
       case 'home':
         return <Home setActiveTab={setActiveTab} user={user} />;
       case 'essen':
-        if (user.role === 'gast') return <Auth onLoginSuccess={handleLoginSuccess} baseUrl={API_BASE_URL} />;
         return (
           <Essen 
             baseUrl={API_BASE_URL} 
@@ -98,7 +97,6 @@ export default function App() {
           />
         );
       case 'wein':
-        if (user.role === 'gast') return <Auth onLoginSuccess={handleLoginSuccess} baseUrl={API_BASE_URL} />;
         return (
           <Wein 
             baseUrl={API_BASE_URL} 

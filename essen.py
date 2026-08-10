@@ -1,6 +1,7 @@
 import os
 import pymongo
 from pymongo import MongoClient, ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://root:mongopass@localhost:27017/')
 
@@ -68,13 +69,22 @@ def get_next_id(collection):
             counters.update_one({'_id': counter_id}, {'$set': {'seq': seq}})
     return seq
 
+# GEAENDERT 10.08.2026 (Stefan): Vorher "count_documents == 0 -> insert" -- nicht atomar, daher
+# legten mehrere Gunicorn-Worker beim gleichzeitigen Start das Grundrezept doppelt an (jeder
+# Worker sah "noch leer", bevor der andere fertig war). Ein
+# Unique-Index auf 'id' macht den Insert race-frei: nur der erste Worker legt das Dokument an,
+# alle anderen bekommen einen DuplicateKeyError und tun nichts.
 def init_db():
     col = get_collection()
+    col.create_index('id', unique=True)
     if col.count_documents({}) == 0:
         doc = PREDEFINED_Essen.copy()
         doc['id'] = 1
         doc['created_by'] = None
-        col.insert_one(doc)
+        try:
+            col.insert_one(doc)
+        except DuplicateKeyError:
+            return
         col.database['counters'].update_one(
             {'_id': col.name}, {'$set': {'seq': 1}}, upsert=True
         )

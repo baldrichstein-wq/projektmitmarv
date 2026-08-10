@@ -193,7 +193,9 @@ def rolle_update(user_id):
 @app.route('/api/wein', methods=['GET', 'POST'])
 def wein_verwalten():
     role = session.get('user_role', 'gast')
-    if role == 'gast':
+    # GEAENDERT 10.08.2026 (Stefan): Ansehen (GET) ist jetzt auch fuer Gaeste erlaubt, nur das
+    # Anlegen (POST) bleibt angemeldeten Nutzern vorbehalten.
+    if request.method == 'POST' and role == 'gast':
         return jsonify({'success': False, 'message': 'Bitte melde dich an.'}), 401
 
     if request.method == 'POST':
@@ -225,9 +227,11 @@ def update_wine(wine_id):
     wine_data = wine.get_wine_by_id(wine_id)
     if not wine_data:
         return jsonify({'success': False, 'message': 'Wein nicht gefunden.'}), 404
-    
+
     role = session.get('user_role', 'gast')
-    if role == 'gast':
+    # GEAENDERT 10.08.2026 (Stefan): Ansehen (GET) ist jetzt auch fuer Gaeste erlaubt, nur das
+    # Bearbeiten (PUT) bleibt angemeldeten Nutzern vorbehalten.
+    if request.method == 'PUT' and role == 'gast':
         return jsonify({'success': False, 'message': 'Bitte melde dich an.'}), 401
 
     if request.method == 'PUT':
@@ -276,7 +280,9 @@ def loesche_wein(wine_id):
 @app.route('/api/essen', methods=['GET', 'POST'])
 def essen_verwalten():
     role = session.get('user_role', 'gast')
-    if role == 'gast':
+    # GEAENDERT 10.08.2026 (Stefan): Ansehen (GET) ist jetzt auch fuer Gaeste erlaubt, nur das
+    # Anlegen (POST) bleibt angemeldeten Nutzern vorbehalten.
+    if request.method == 'POST' and role == 'gast':
         return jsonify({'success': False, 'message': 'Bitte melden Sie sich an.'}), 401
 
     if request.method == 'POST':
@@ -308,7 +314,9 @@ def essen_verwalten():
 @app.route('/api/essen/<int:essen_id>', methods=['GET', 'PUT'])
 def bearbeite_essen(essen_id):
     role = session.get('user_role', 'gast')
-    if role == 'gast':
+    # GEAENDERT 10.08.2026 (Stefan): Ansehen (GET) ist jetzt auch fuer Gaeste erlaubt, nur das
+    # Bearbeiten (PUT) bleibt angemeldeten Nutzern vorbehalten.
+    if request.method == 'PUT' and role == 'gast':
         return jsonify({'success': False, 'message': 'Bitte melde dich an.'}), 401
 
     aktuelles_essen = essen.get_essen(essen_id)
