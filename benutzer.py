@@ -3,6 +3,7 @@ import re
 import time
 import psycopg2
 from psycopg2 import pool
+import pyotp
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://admin:adminpass@localhost:5432/benutzerdb')
@@ -96,6 +97,13 @@ def init_db():
                     )
                 ''')
 
+                # NEU 11.08.2026 (Stefan): Spalten fuer TOTP-2FA. "CREATE TABLE IF NOT EXISTS"
+                # oben legt sie nur bei einer brandneuen Tabelle an -- auf einer bereits
+                # bestehenden Installation (AWS/NAS) braucht es zusaetzlich ein ALTER TABLE,
+                # sonst fehlen die Spalten dort weiterhin.
+                cursor.execute('ALTER TABLE benutzer ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(64)')
+                cursor.execute('ALTER TABLE benutzer ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE')
+
                 cursor.execute('SELECT COUNT(*) FROM benutzer')
                 if cursor.fetchone()[0] == 0:
                     admin_hash = generate_password_hash('admin123')
@@ -178,7 +186,7 @@ def get_all_users():
         conn = get_connection()
         with conn:
             with conn.cursor() as cursor:
-                cursor.execute('SELECT id, name, email, role FROM benutzer ORDER BY id')
+                cursor.execute('SELECT id, name, email, role, totp_enabled FROM benutzer ORDER BY id')
                 rows = cursor.fetchall()
 
         return [
@@ -186,10 +194,127 @@ def get_all_users():
                 'id': row[0],
                 'name': row[1],
                 'email': row[2],
-                'role': normalize_role(row[3])
+                'role': normalize_role(row[3]),
+                'totp_enabled': bool(row[4])
             }
             for row in rows
         ]
+    finally:
+        release_connection(conn)
+
+def get_user_by_email(email):
+    """Gibt Name/Rolle zu einer E-Mail zurück (ohne Passwort-Prüfung, z.B. nach 2FA-Login)."""
+    conn = None
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT id, name, email, role FROM benutzer WHERE email = %s', (email,))
+                row = cursor.fetchone()
+        if not row:
+            return None
+        return {'id': row[0], 'name': row[1], 'email': row[2], 'role': normalize_role(row[3])}
+    finally:
+        release_connection(conn)
+
+# --- TOTP Zwei-Faktor-Authentifizierung ---
+# NEU 11.08.2026 (Stefan): Bewusst OHNE Backup-/Recovery-Codes umgesetzt -- das Projekt hat
+# keine eigene E-Mail-Domain, ueber die man sonst Recovery-Codes verschicken wuerde, und ein
+# separates "Codes sicher aufbewahren"-UI waere fuer dieses kleine Team-Projekt Overkill.
+# Stattdessen kann ein admin 2FA fuer einen Benutzer zuruecksetzen (siehe totp_admin_reset),
+# falls z.B. das Handy mit der Authenticator-App verloren geht.
+
+def totp_secret_generieren(email, issuer='Rezept&Brau'):
+    """Erzeugt ein neues TOTP-Secret, speichert es (2FA bleibt bis zur Bestaetigung inaktiv)
+    und gibt (secret, otpauth_uri) zurueck."""
+    secret = pyotp.random_base32()
+    conn = None
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    'UPDATE benutzer SET totp_secret = %s, totp_enabled = FALSE WHERE email = %s',
+                    (secret, email)
+                )
+        uri = pyotp.TOTP(secret).provisioning_uri(name=email, issuer_name=issuer)
+        return secret, uri
+    finally:
+        release_connection(conn)
+
+def totp_aktivieren(email, code):
+    """Prüft den vom Nutzer eingegebenen Code gegen das zuvor erzeugte Secret und schaltet
+    2FA erst dann scharf -- so wird sichergestellt, dass die Authenticator-App den Code auch
+    wirklich korrekt erzeugt, bevor der Nutzer beim naechsten Login davon abhaengt."""
+    conn = None
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT totp_secret FROM benutzer WHERE email = %s', (email,))
+                row = cursor.fetchone()
+                if not row or not row[0]:
+                    return False
+                if not pyotp.TOTP(row[0]).verify(code, valid_window=1):
+                    return False
+                cursor.execute('UPDATE benutzer SET totp_enabled = TRUE WHERE email = %s', (email,))
+        return True
+    finally:
+        release_connection(conn)
+
+def totp_deaktivieren(email):
+    conn = None
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    'UPDATE benutzer SET totp_secret = NULL, totp_enabled = FALSE WHERE email = %s',
+                    (email,)
+                )
+        return True
+    finally:
+        release_connection(conn)
+
+def totp_admin_reset(user_id):
+    """Setzt 2FA fuer einen Benutzer zurueck (Admin-Aktion, z.B. bei Geraeteverlust)."""
+    conn = None
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    'UPDATE benutzer SET totp_secret = NULL, totp_enabled = FALSE WHERE id = %s',
+                    (user_id,)
+                )
+                success = cursor.rowcount > 0
+        return success
+    finally:
+        release_connection(conn)
+
+def totp_status(email):
+    conn = None
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT totp_enabled FROM benutzer WHERE email = %s', (email,))
+                row = cursor.fetchone()
+        return bool(row and row[0])
+    finally:
+        release_connection(conn)
+
+def totp_code_pruefen(email, code):
+    conn = None
+    try:
+        conn = get_connection()
+        with conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT totp_secret, totp_enabled FROM benutzer WHERE email = %s', (email,))
+                row = cursor.fetchone()
+        if not row or not row[0] or not row[1]:
+            return False
+        return pyotp.TOTP(row[0]).verify(code, valid_window=1)
     finally:
         release_connection(conn)
 

@@ -7,6 +7,8 @@ import os
 import re
 import secrets
 import hmac
+import io
+import segno
 import benutzer
 import wine
 import essen
@@ -155,6 +157,19 @@ def anmeldung():
         # Das erzeugt zugleich ein neues CSRF-Token, das alte (vor dem Login gueltige) Token
         # wird damit ungueltig.
         session.clear()
+
+        # NEU 11.08.2026 (Stefan): Wenn 2FA aktiv ist, wird die Session NUR als "wartet auf
+        # TOTP-Code" markiert -- user_email/name/role werden erst in /api/anmeldung/totp
+        # gesetzt, nachdem der zweite Faktor bestaetigt wurde. So ist ein Angreifer mit
+        # gestohlenem Passwort ohne den zweiten Faktor weiterhin nicht angemeldet.
+        if benutzer.totp_status(email):
+            session['pending_2fa_email'] = email
+            return jsonify({
+                'success': True,
+                'totp_required': True,
+                'csrf_token': _get_or_create_csrf_token()
+            })
+
         session.permanent = True
         session['user_email'] = email
         session['user_name'] = user.get('name', email)
@@ -172,6 +187,38 @@ def anmeldung():
     else:
         return jsonify({'success': False, 'message': 'Ungültige Anmeldedaten.'}), 401
 
+# NEU 11.08.2026 (Stefan): Zweiter Schritt des Logins, falls der Benutzer 2FA aktiviert hat --
+# wird von anmeldung() oben ueber 'totp_required' im Frontend ausgeloest.
+@app.route('/api/anmeldung/totp', methods=['POST'])
+@limiter.limit("10 per minute")
+def anmeldung_totp():
+    pending_email = session.get('pending_2fa_email')
+    if not pending_email:
+        return jsonify({'success': False, 'message': 'Keine ausstehende Anmeldung. Bitte erneut anmelden.'}), 400
+
+    data = request.json or {}
+    code = data.get('code', '').strip()
+
+    if not benutzer.totp_code_pruefen(pending_email, code):
+        return jsonify({'success': False, 'message': 'Code ungültig oder abgelaufen.'}), 401
+
+    user = benutzer.get_user_by_email(pending_email)
+    session.clear()
+    session.permanent = True
+    session['user_email'] = pending_email
+    session['user_name'] = user.get('name', pending_email) if user else pending_email
+    session['user_role'] = user.get('role', 'benutzer') if user else 'benutzer'
+    return jsonify({
+        'success': True,
+        'message': f"Willkommen {session['user_name']}!",
+        'user': {
+            'email': pending_email,
+            'name': session['user_name'],
+            'role': session['user_role']
+        },
+        'csrf_token': _get_or_create_csrf_token()
+    })
+
 @app.route('/api/abmeldung', methods=['POST'])
 def abmeldung():
     session.clear()
@@ -180,6 +227,64 @@ def abmeldung():
         'message': 'Erfolgreich abgemeldet.',
         'csrf_token': _get_or_create_csrf_token()
     })
+
+# --- Zwei-Faktor-Authentifizierung (Verwaltung durch den eingeloggten Benutzer) ---
+
+@app.route('/api/2fa/status')
+def zwei_fa_status():
+    if 'user_email' not in session:
+        return jsonify({'success': False, 'message': 'Bitte anmelden.'}), 401
+    return jsonify({'success': True, 'enabled': benutzer.totp_status(session['user_email'])})
+
+@app.route('/api/2fa/setup', methods=['POST'])
+def zwei_fa_setup():
+    if 'user_email' not in session:
+        return jsonify({'success': False, 'message': 'Bitte anmelden.'}), 401
+
+    secret, uri = benutzer.totp_secret_generieren(session['user_email'])
+    qr = segno.make(uri)
+    buf = io.BytesIO()
+    qr.save(buf, kind='svg', xmldecl=False, svgns=True, scale=4)
+    qr_svg = buf.getvalue().decode('utf-8')
+
+    return jsonify({'success': True, 'secret': secret, 'otpauth_uri': uri, 'qr_svg': qr_svg})
+
+@app.route('/api/2fa/aktivieren', methods=['POST'])
+@limiter.limit("10 per minute")
+def zwei_fa_aktivieren():
+    if 'user_email' not in session:
+        return jsonify({'success': False, 'message': 'Bitte anmelden.'}), 401
+
+    data = request.json or {}
+    code = data.get('code', '').strip()
+    if benutzer.totp_aktivieren(session['user_email'], code):
+        return jsonify({'success': True, 'message': 'Zwei-Faktor-Authentifizierung wurde aktiviert.'})
+    return jsonify({'success': False, 'message': 'Code ungültig. Bitte erneut versuchen.'}), 400
+
+@app.route('/api/2fa/deaktivieren', methods=['POST'])
+def zwei_fa_deaktivieren():
+    if 'user_email' not in session:
+        return jsonify({'success': False, 'message': 'Bitte anmelden.'}), 401
+
+    data = request.json or {}
+    password = data.get('password', '').strip()
+    if not benutzer.benutzer_anmelden(session['user_email'], password):
+        return jsonify({'success': False, 'message': 'Passwort falsch.'}), 401
+
+    benutzer.totp_deaktivieren(session['user_email'])
+    return jsonify({'success': True, 'message': 'Zwei-Faktor-Authentifizierung wurde deaktiviert.'})
+
+# NEU 11.08.2026 (Stefan): Admin-Reset falls ein Benutzer sein Geraet mit der Authenticator-App
+# verliert -- ohne eigene E-Mail-Domain gibt es keinen Recovery-Codes-per-Mail-Weg, das uebernimmt
+# stattdessen der admin (analog zu rolle_update() oben).
+@app.route('/api/benutzer/2fa_zuruecksetzen/<int:user_id>', methods=['POST'])
+def zwei_fa_admin_reset(user_id):
+    if session.get('user_role') != 'admin':
+        return jsonify({'success': False, 'message': 'Nicht autorisiert.'}), 403
+
+    if benutzer.totp_admin_reset(user_id):
+        return jsonify({'success': True, 'message': 'Zwei-Faktor-Authentifizierung wurde zurückgesetzt.'})
+    return jsonify({'success': False, 'message': 'Fehler beim Zurücksetzen.'}), 400
 
 @app.route('/api/registrierung', methods=['POST'])
 def registrierung():

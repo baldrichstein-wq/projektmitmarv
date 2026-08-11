@@ -8,6 +8,7 @@ import Admin from './components/Admin';
 import Auth from './components/Auth';
 import UeberUns from './components/UeberUns';
 import Impressum from './components/Impressum';
+import Sicherheit from './components/Sicherheit';
 import { apiFetch, setCsrfToken } from './utils/api';
 import './App.css';
 
@@ -116,6 +117,9 @@ export default function App() {
         return <UeberUns />;
       case 'impressum':
         return <Impressum />;
+      case 'sicherheit':
+        if (!user.logged_in) return <Home setActiveTab={setActiveTab} user={user} />;
+        return <Sicherheit baseUrl={API_BASE_URL} />;
       case 'admin':
         if (user.role !== 'admin') return <Home setActiveTab={setActiveTab} user={user} />;
         return <Admin baseUrl={API_BASE_URL} />;

@@ -56,6 +56,26 @@ export default function Admin({ baseUrl }) {
     }
   };
 
+  const handleReset2fa = async (userId) => {
+    if (!window.confirm('2FA für diesen Benutzer wirklich zurücksetzen? Er müsste sie danach neu einrichten.')) return;
+    setError('');
+    setSuccess('');
+    try {
+      const response = await apiFetch(`${baseUrl}/api/benutzer/2fa_zuruecksetzen/${userId}`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(data.message);
+        fetchUsers();
+      } else {
+        setError(data.message || 'Fehler beim Zurücksetzen.');
+      }
+    } catch (err) {
+      setError('Netzwerkfehler.');
+    }
+  };
+
   const handleDeleteUser = async (userId) => {
     if (!window.confirm('Möchten Sie diesen Benutzer wirklich löschen?')) return;
     setError('');
@@ -149,6 +169,7 @@ export default function Admin({ baseUrl }) {
                   <th style={{ padding: '12px' }}>Name</th>
                   <th style={{ padding: '12px' }}>E-Mail</th>
                   <th style={{ padding: '12px' }}>Rolle</th>
+                  <th style={{ padding: '12px' }}>2FA</th>
                   <th style={{ padding: '12px', textAlign: 'right' }}>Aktionen</th>
                 </tr>
               </thead>
@@ -176,14 +197,33 @@ export default function Admin({ baseUrl }) {
                         <option value="admin" style={{ background: 'var(--bg-dark)' }}>Admin</option>
                       </select>
                     </td>
+                    <td style={{ padding: '12px' }}>
+                      {u.totp_enabled ? (
+                        <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontSize: '0.75rem', padding: '2px 8px' }}>Aktiv</span>
+                      ) : (
+                        <span className="badge" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)', fontSize: '0.75rem', padding: '2px 8px' }}>Inaktiv</span>
+                      )}
+                    </td>
                     <td style={{ padding: '12px', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => handleDeleteUser(u.id)} 
-                        className="btn btn-danger" 
-                        style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        {u.totp_enabled && (
+                          <button
+                            onClick={() => handleReset2fa(u.id)}
+                            className="btn btn-secondary"
+                            style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                            title="2FA zurücksetzen"
+                          >
+                            <ShieldAlert size={14} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteUser(u.id)}
+                          className="btn btn-danger"
+                          style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

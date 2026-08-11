@@ -9,3 +9,9 @@ psycopg2-binary==2.9.9
 pymongo==4.6.1
 # NEU 07.08.2026 (Stefan): fuer Rate-Limiting auf /api/anmeldung (Brute-Force-Schutz)
 flask-limiter==3.7.0
+# NEU 11.08.2026 (Stefan): Zwei-Faktor-Authentifizierung (TOTP, z.B. Google Authenticator).
+# pyotp erzeugt/prueft die Codes, segno rendert den Setup-QR-Code als SVG -- bewusst statt
+# "qrcode" gewaehlt, da segno keine Pillow-Abhaengigkeit (und damit keine zusaetzlichen
+# System-Bibliotheken im Docker-Image) braucht.
+pyotp==2.10.0
+segno==1.6.6

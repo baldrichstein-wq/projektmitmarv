@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Wine, Search, User, LogOut, Info, Home as HomeIcon } from 'lucide-react';
+import { BookOpen, Wine, Search, User, LogOut, Info, Home as HomeIcon, ShieldCheck } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, user, onLogout }) {
   return (
@@ -77,8 +77,18 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }) {
             <Info size={16} /> Über uns
           </span>
 
+          {user.role !== 'gast' && (
+            <span
+              className={`nav-link ${activeTab === 'sicherheit' ? 'active' : ''}`}
+              onClick={() => setActiveTab('sicherheit')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <ShieldCheck size={16} /> Sicherheit
+            </span>
+          )}
+
           {user.role === 'admin' && (
-            <span 
+            <span
               className={`nav-link ${activeTab === 'admin' ? 'active' : ''}`}
               onClick={() => setActiveTab('admin')}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}

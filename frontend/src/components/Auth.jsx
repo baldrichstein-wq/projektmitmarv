@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, ShieldAlert } from 'lucide-react';
+import { User, Mail, Lock, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { apiFetch, setCsrfToken, checkPasswordStrength } from '../utils/api';
 
 export default function Auth({ onLoginSuccess, baseUrl }) {
@@ -9,6 +9,10 @@ export default function Auth({ onLoginSuccess, baseUrl }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Zweiter Schritt, falls der Account 2FA aktiviert hat
+  const [totpRequired, setTotpRequired] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,6 +53,10 @@ export default function Auth({ onLoginSuccess, baseUrl }) {
 
       if (isLogin) {
         setCsrfToken(data.csrf_token);
+        if (data.totp_required) {
+          setTotpRequired(true);
+          return;
+        }
         setSuccess('Erfolgreich angemeldet!');
         setTimeout(() => {
           onLoginSuccess(data.user);
@@ -63,6 +71,92 @@ export default function Auth({ onLoginSuccess, baseUrl }) {
       setError('Netzwerkfehler: Stellen Sie sicher, dass das Backend läuft.');
     }
   };
+
+  const handleTotpSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!totpCode || totpCode.trim().length !== 6) {
+      setError('Bitte den 6-stelligen Code aus deiner Authenticator-App eingeben.');
+      return;
+    }
+    try {
+      const response = await apiFetch(`${baseUrl}/api/anmeldung/totp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: totpCode.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        setError(data.message || 'Code ungültig.');
+        return;
+      }
+      setCsrfToken(data.csrf_token);
+      setSuccess('Erfolgreich angemeldet!');
+      setTimeout(() => {
+        onLoginSuccess(data.user);
+      }, 800);
+    } catch (err) {
+      setError('Netzwerkfehler: Stellen Sie sicher, dass das Backend läuft.');
+    }
+  };
+
+  if (totpRequired) {
+    return (
+      <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+        <div className="glass" style={{ width: '100%', maxWidth: '450px', padding: '40px 30px' }}>
+          <h2 style={{ fontSize: '1.6rem', marginBottom: '10px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <ShieldCheck size={22} /> Zwei-Faktor-Code
+          </h2>
+          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '25px' }}>
+            Bitte gib den 6-stelligen Code aus deiner Authenticator-App ein.
+          </p>
+
+          {error && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 16px', borderRadius: '10px', color: '#f87171', marginBottom: '20px', fontSize: '0.9rem' }}>
+              <ShieldAlert size={18} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px 16px', borderRadius: '10px', color: '#34d399', marginBottom: '20px', fontSize: '0.9rem' }}>
+              {success}
+            </div>
+          )}
+
+          <form onSubmit={handleTotpSubmit}>
+            <div className="input-group" style={{ marginBottom: '30px' }}>
+              <label className="input-label" htmlFor="auth-totp-code">Code</label>
+              <input
+                id="auth-totp-code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                className="input-field"
+                placeholder="123456"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                style={{ width: '100%', textAlign: 'center', fontSize: '1.4rem', letterSpacing: '0.3em' }}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
+              Bestätigen
+            </button>
+          </form>
+
+          <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '0.85rem' }}>
+            <span
+              onClick={() => { setTotpRequired(false); setTotpCode(''); setError(''); setPassword(''); }}
+              style={{ color: '#ff6b6b', cursor: 'pointer', fontWeight: 600 }}
+            >
+              Zurück zur Anmeldung
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
