@@ -12,7 +12,7 @@ export default function UeberUns() {
       <div className="glass" style={{ padding: '40px' }}>
         <h1 style={{ fontSize: '2.2rem', marginBottom: '15px' }}>Über dieses Projekt</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.7', marginBottom: '20px' }}>
-          Dieses Projekt entstand im Rahmen der Backend-Projektphase (Sprint-Simulations-Projekt).
+          Dieses Projekt entstand im Rahmen der Backend-Projektphase.
           Ziel war es ursprünglich, ein Python/Flask-basiertes Rezeptbuch mit SQLite und Hashing-Sicherheitsfunktionen
           zu erstellen. Wir haben das Projekt seitdem zu einem modernen, reaktiven Frontend (Vite/React), einem
           entkoppelten JSON API Backend und einer produktiven PostgreSQL/MongoDB-Anbindung umgebaut — inklusive

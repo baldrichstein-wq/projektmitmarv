@@ -7,6 +7,7 @@ import Search from './components/Search';
 import Admin from './components/Admin';
 import Auth from './components/Auth';
 import UeberUns from './components/UeberUns';
+import Impressum from './components/Impressum';
 import './App.css';
 
 const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:5005' : ''; // Flask backend address (dev vs prod)
@@ -115,6 +116,8 @@ export default function App() {
         );
       case 'ueberuns':
         return <UeberUns />;
+      case 'impressum':
+        return <Impressum />;
       case 'admin':
         if (user.role !== 'admin') return <Home setActiveTab={setActiveTab} user={user} />;
         return <Admin baseUrl={API_BASE_URL} />;
@@ -145,6 +148,13 @@ export default function App() {
         fontSize: '0.85rem'
       }}>
         © 2026 Rezeptbuch & Brauportal. Alle Rechte vorbehalten. Schulprojekt-Sim.
+        {' · '}
+        <span
+          onClick={() => setActiveTab('impressum')}
+          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+        >
+          Impressum
+        </span>
       </footer>
     </div>
   );
