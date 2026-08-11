@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Lock, ShieldAlert } from 'lucide-react';
+import { apiFetch, setCsrfToken, checkPasswordStrength } from '../utils/api';
 
 export default function Auth({ onLoginSuccess, baseUrl }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,11 +20,19 @@ export default function Auth({ onLoginSuccess, baseUrl }) {
       return;
     }
 
+    if (!isLogin) {
+      const strengthError = checkPasswordStrength(password);
+      if (strengthError) {
+        setError(strengthError);
+        return;
+      }
+    }
+
     try {
       const endpoint = isLogin ? '/api/anmeldung' : '/api/registrierung';
       const body = isLogin ? { email, password } : { name, email, password };
 
-      const response = await fetch(`${baseUrl}${endpoint}`, {
+      const response = await apiFetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,6 +48,7 @@ export default function Auth({ onLoginSuccess, baseUrl }) {
       }
 
       if (isLogin) {
+        setCsrfToken(data.csrf_token);
         setSuccess('Erfolgreich angemeldet!');
         setTimeout(() => {
           onLoginSuccess(data.user);
@@ -179,6 +189,11 @@ export default function Auth({ onLoginSuccess, baseUrl }) {
                 style={{ paddingLeft: '40px', width: '100%' }}
               />
             </div>
+            {!isLogin && (
+              <p style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Mindestens 8 Zeichen, ein Großbuchstabe, ein Kleinbuchstabe und eine Ziffer.
+              </p>
+            )}
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Wine, Clock, Activity, Plus, Edit, Trash2, X, ChevronRight } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 export default function Wein({ baseUrl, user, selectedPreloadWein, clearPreload }) {
   const [winesList, setWinesList] = useState([]);
@@ -25,7 +26,7 @@ export default function Wein({ baseUrl, user, selectedPreloadWein, clearPreload 
   const fetchWines = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/wein`);
+      const response = await apiFetch(`${baseUrl}/api/wein`);
       const data = await response.json();
       if (data.success) {
         setWinesList(data.wines);
@@ -106,7 +107,7 @@ export default function Wein({ baseUrl, user, selectedPreloadWein, clearPreload 
     e.stopPropagation();
     if (!window.confirm('Diesen Wein wirklich löschen?')) return;
     try {
-      const response = await fetch(`${baseUrl}/api/wein/loeschen/${id}`, {
+      const response = await apiFetch(`${baseUrl}/api/wein/loeschen/${id}`, {
         method: 'DELETE'
       });
       const data = await response.json();
@@ -143,7 +144,7 @@ export default function Wein({ baseUrl, user, selectedPreloadWein, clearPreload 
       const url = editId ? `${baseUrl}/api/wein/${editId}` : `${baseUrl}/api/wein`;
       const method = editId ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

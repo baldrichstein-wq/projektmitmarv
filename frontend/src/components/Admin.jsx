@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Trash2, UserPlus, Users } from 'lucide-react';
+import { apiFetch, checkPasswordStrength } from '../utils/api';
 
 export default function Admin({ baseUrl }) {
   const [users, setUsers] = useState([]);
@@ -16,7 +17,7 @@ export default function Admin({ baseUrl }) {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/benutzer`);
+      const response = await apiFetch(`${baseUrl}/api/benutzer`);
       const data = await response.json();
       if (data.success) {
         setUsers(data.users);
@@ -38,7 +39,7 @@ export default function Admin({ baseUrl }) {
     setError('');
     setSuccess('');
     try {
-      const response = await fetch(`${baseUrl}/api/benutzer/rolle_aendern/${userId}`, {
+      const response = await apiFetch(`${baseUrl}/api/benutzer/rolle_aendern/${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rolle: role })
@@ -60,7 +61,7 @@ export default function Admin({ baseUrl }) {
     setError('');
     setSuccess('');
     try {
-      const response = await fetch(`${baseUrl}/api/benutzer/loeschen/${userId}`, {
+      const response = await apiFetch(`${baseUrl}/api/benutzer/loeschen/${userId}`, {
         method: 'DELETE'
       });
       const data = await response.json();
@@ -83,8 +84,13 @@ export default function Admin({ baseUrl }) {
       setError('Bitte alle Felder ausfüllen.');
       return;
     }
+    const strengthError = checkPasswordStrength(newPassword);
+    if (strengthError) {
+      setError(strengthError);
+      return;
+    }
     try {
-      const response = await fetch(`${baseUrl}/api/benutzer`, {
+      const response = await apiFetch(`${baseUrl}/api/benutzer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName, email: newEmail, password: newPassword, role: newRole })

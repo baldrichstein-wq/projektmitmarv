@@ -5,6 +5,8 @@ from flask_limiter.util import get_remote_address
 from datetime import timedelta
 import os
 import re
+import secrets
+import hmac
 import benutzer
 import wine
 import essen
@@ -59,7 +61,37 @@ else:
         "http://localhost:5175", "http://127.0.0.1:5175"
     ]
 
-CORS(app, supports_credentials=True, origins=CORS_ORIGINS)
+CORS(app, supports_credentials=True, origins=CORS_ORIGINS,
+     allow_headers=['Content-Type', 'X-CSRF-Token'])
+
+# NEU 11.08.2026 (Stefan): CSRF-Schutz (Double-Submit-Token). Die Session laeuft ueber ein
+# signiertes Cookie (SameSite=Lax/Strict), das reicht aber allein nicht gegen CSRF -- ein
+# fremdes Formular/Script auf einer anderen Seite kann bei SameSite=Lax weiterhin GET-Navigation
+# und teils simple Cross-Site-Requests ausloesen. Deshalb zusaetzlich ein Token, das NUR per
+# JavaScript aus der API gelesen und explizit als Header mitgeschickt werden kann -- das kann
+# eine fremde Seite nicht faelschen, da sie den Token nicht auslesen darf (CORS blockiert das
+# Lesen der Response fuer fremde Origins).
+CSRF_SAFE_METHODS = {'GET', 'HEAD', 'OPTIONS'}
+
+def _get_or_create_csrf_token():
+    token = session.get('csrf_token')
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session['csrf_token'] = token
+    return token
+
+@app.before_request
+def _csrf_protect():
+    if request.method in CSRF_SAFE_METHODS:
+        return
+    session_token = session.get('csrf_token')
+    header_token = request.headers.get('X-CSRF-Token', '')
+    if not session_token or not header_token or not hmac.compare_digest(session_token, header_token):
+        return jsonify({'success': False, 'message': 'Ungültiges oder fehlendes CSRF-Token. Bitte Seite neu laden.'}), 403
+
+@app.route('/api/csrf-token')
+def csrf_token():
+    return jsonify({'csrf_token': _get_or_create_csrf_token()})
 
 # --- UTILITY FUNKTIONEN ---
 
@@ -104,7 +136,8 @@ def get_current_user():
         'logged_in': 'user_email' in session,
         'email': session.get('user_email'),
         'name': session.get('user_name', 'Gast'),
-        'role': session.get('user_role', 'gast')
+        'role': session.get('user_role', 'gast'),
+        'csrf_token': _get_or_create_csrf_token()
     })
 
 @app.route('/api/anmeldung', methods=['POST'])
@@ -116,6 +149,12 @@ def anmeldung():
 
     user = benutzer.benutzer_anmelden(email, password)
     if user:
+        # GEAENDERT 11.08.2026 (Stefan): Session vor dem Login komplett leeren statt nur zu
+        # ueberschreiben -- verhindert, dass Werte aus einer evtl. vor dem Login manipulierten
+        # Session (Session Fixation) in die frisch authentifizierte Session uebernommen werden.
+        # Das erzeugt zugleich ein neues CSRF-Token, das alte (vor dem Login gueltige) Token
+        # wird damit ungueltig.
+        session.clear()
         session.permanent = True
         session['user_email'] = email
         session['user_name'] = user.get('name', email)
@@ -127,7 +166,8 @@ def anmeldung():
                 'email': email,
                 'name': session['user_name'],
                 'role': session['user_role']
-            }
+            },
+            'csrf_token': _get_or_create_csrf_token()
         })
     else:
         return jsonify({'success': False, 'message': 'Ungültige Anmeldedaten.'}), 401
@@ -135,7 +175,11 @@ def anmeldung():
 @app.route('/api/abmeldung', methods=['POST'])
 def abmeldung():
     session.clear()
-    return jsonify({'success': True, 'message': 'Erfolgreich abgemeldet.'})
+    return jsonify({
+        'success': True,
+        'message': 'Erfolgreich abgemeldet.',
+        'csrf_token': _get_or_create_csrf_token()
+    })
 
 @app.route('/api/registrierung', methods=['POST'])
 def registrierung():

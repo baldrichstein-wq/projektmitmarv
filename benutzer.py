@@ -1,10 +1,27 @@
 import os
+import re
 import time
 import psycopg2
 from psycopg2 import pool
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://admin:adminpass@localhost:5432/benutzerdb')
+
+# NEU 11.08.2026 (Stefan): Mindestanforderungen an neue Passwoerter (Registrierung + vom Admin
+# angelegte Benutzer). Greift nur bei NEU angelegten Konten -- die beiden Seed-Benutzer aus
+# init_db() (admin123/benutzer123) werden direkt gehasht angelegt und laufen nicht durch diese
+# Pruefung, damit der lokale Erstzugang wie bisher funktioniert.
+def passwort_ist_stark(passwort):
+    """Prueft Mindestanforderungen an ein neues Passwort. Gibt (ok, fehlermeldung) zurueck."""
+    if len(passwort) < 8:
+        return False, 'Das Passwort muss mindestens 8 Zeichen lang sein.'
+    if not re.search(r'[A-Z]', passwort):
+        return False, 'Das Passwort muss mindestens einen Großbuchstaben enthalten.'
+    if not re.search(r'[a-z]', passwort):
+        return False, 'Das Passwort muss mindestens einen Kleinbuchstaben enthalten.'
+    if not re.search(r'\d', passwort):
+        return False, 'Das Passwort muss mindestens eine Ziffer enthalten.'
+    return True, ''
 
 # --- Rechteverwaltung ---
 RECHTE_PRO_ROLE = {
@@ -117,6 +134,10 @@ def benutzer_anmelden(email, passwort):
 
 def benutzer_anlegen(name, email, passwort, role="benutzer"):
     """Fügt einen neuen Benutzer hinzu."""
+    stark_genug, fehler = passwort_ist_stark(passwort)
+    if not stark_genug:
+        return False, fehler
+
     if not role:
         role = "benutzer"
     role = normalize_role(role)

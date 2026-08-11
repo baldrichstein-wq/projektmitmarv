@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Clock, Users, Plus, Edit, Trash2, X, ChevronRight, Calculator } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 export default function Essen({ baseUrl, user, selectedPreloadEssen, clearPreload }) {
   const [essenList, setEssenList] = useState([]);
@@ -25,7 +26,7 @@ export default function Essen({ baseUrl, user, selectedPreloadEssen, clearPreloa
   const fetchEssen = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/essen`);
+      const response = await apiFetch(`${baseUrl}/api/essen`);
       const data = await response.json();
       if (data.success) {
         setEssenList(data.essen);
@@ -61,7 +62,7 @@ export default function Essen({ baseUrl, user, selectedPreloadEssen, clearPreloa
     if (!zielPortionen || !selectedEssen) return;
     setScalingLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/api/essen/skalieren`, {
+      const response = await apiFetch(`${baseUrl}/api/essen/skalieren`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -108,7 +109,7 @@ export default function Essen({ baseUrl, user, selectedPreloadEssen, clearPreloa
     e.stopPropagation();
     if (!window.confirm('Dieses Rezept wirklich löschen?')) return;
     try {
-      const response = await fetch(`${baseUrl}/api/essen/loeschen/${id}`, {
+      const response = await apiFetch(`${baseUrl}/api/essen/loeschen/${id}`, {
         method: 'DELETE'
       });
       const data = await response.json();
@@ -144,7 +145,7 @@ export default function Essen({ baseUrl, user, selectedPreloadEssen, clearPreloa
       const url = editId ? `${baseUrl}/api/essen/${editId}` : `${baseUrl}/api/essen`;
       const method = editId ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

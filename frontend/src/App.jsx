@@ -8,6 +8,7 @@ import Admin from './components/Admin';
 import Auth from './components/Auth';
 import UeberUns from './components/UeberUns';
 import Impressum from './components/Impressum';
+import { apiFetch, setCsrfToken } from './utils/api';
 import './App.css';
 
 const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:5005' : ''; // Flask backend address (dev vs prod)
@@ -28,13 +29,11 @@ export default function App() {
   // Authenticate session on load
   const checkSession = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/me`, {
-        // Essential to pass cookies across origins
-        credentials: 'include'
-      });
+      const response = await apiFetch(`${API_BASE_URL}/api/me`);
       if (response.ok) {
         const data = await response.json();
         setUser(data);
+        setCsrfToken(data.csrf_token);
       }
     } catch (err) {
       console.warn("Backend session check failed (backend might not be running yet).");
@@ -57,10 +56,9 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/abmeldung`, {
-        method: 'POST',
-        credentials: 'include'
-      });
+      const response = await apiFetch(`${API_BASE_URL}/api/abmeldung`, { method: 'POST' });
+      const data = await response.json();
+      setCsrfToken(data.csrf_token);
     } catch (err) {
       console.error("Logout failed:", err);
     }
