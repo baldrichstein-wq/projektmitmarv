@@ -128,9 +128,9 @@ export default function Home({ setActiveTab, user }) {
               <Compass size={20} />
             </div>
             <div>
-              <h4 style={{ fontSize: '1rem', marginBottom: '4px' }}>Offline-Fähig & SQLite</h4>
+              <h4 style={{ fontSize: '1rem', marginBottom: '4px' }}>PostgreSQL & MongoDB</h4>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                Alle Daten werden sicher im Backend in SQLite Datenbanken abgelegt und können direkt geladen werden.
+                Nutzerdaten liegen produktiv in PostgreSQL, Rezepte und Weine in MongoDB — beide Datenbanken laufen containerisiert per Docker Compose.
               </p>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function Home({ setActiveTab, user }) {
             <div>
               <h4 style={{ fontSize: '1rem', marginBottom: '4px' }}>Team-Kollaboration</h4>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                Entwickelt von Marvin, Marina, Stefan und David als agiles Schulprojekt.
+                Entwickelt und deployed von David (NAS) und Stefan (AWS) als agiles Schulprojekt.
               </p>
             </div>
           </div>

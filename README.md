@@ -6,7 +6,7 @@ Schulprojekt1 Rezeptbuch
 
 Team
 
-Marvin, Marina, Stefan, David
+David (NAS-Deployment), Stefan (AWS-Deployment)
 
 
 07.05. Fehlerbehebung und Fehlersuche und wieder auf tauchen von Fehlern David Marvin Marina Stefan  (wir sind Frustriert Mac ist Scheiße)

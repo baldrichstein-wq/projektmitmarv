@@ -3,10 +3,8 @@ import { Sparkles, Calendar, BookOpen, ShieldCheck } from 'lucide-react';
 
 export default function UeberUns() {
   const team = [
-    { name: 'Marvin', role: 'Weinrezept-Manager & GUI', initial: 'M', color: '#ff8e53' },
-    { name: 'Marina', role: 'Rechtevergabe & Userverwaltung', initial: 'MA', color: '#e94057' },
-    { name: 'Stefan', role: 'Essensrezept-Manager & SQLite', initial: 'S', color: '#8a2387' },
-    { name: 'David', role: 'Flask Integration & API Bridge', initial: 'D', color: '#ff6b6b' },
+    { name: 'David', role: 'Deployment & Betrieb (NAS)', initial: 'D', color: '#ff6b6b' },
+    { name: 'Stefan', role: 'Deployment & Betrieb (AWS)', initial: 'S', color: '#8a2387' },
   ];
 
   return (
@@ -14,10 +12,11 @@ export default function UeberUns() {
       <div className="glass" style={{ padding: '40px' }}>
         <h1 style={{ fontSize: '2.2rem', marginBottom: '15px' }}>Über dieses Projekt</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.7', marginBottom: '20px' }}>
-          Dieses Projekt entstand im Rahmen der dreiwöchigen Backend-Projektphase (Sprint-Simulations-Projekt). 
-          Ziel war es ursprünglich, ein Python/Flask-basiertes Rezeptbuch mit SQLite und Hashing-Sicherheitsfunktionen 
-          zu erstellen. Wir haben das Projekt nun zu einem modernen, reaktiven Frontend (Vite/React) und einem 
-          entkoppelten JSON API Backend umgebaut.
+          Dieses Projekt entstand im Rahmen der Backend-Projektphase (Sprint-Simulations-Projekt).
+          Ziel war es ursprünglich, ein Python/Flask-basiertes Rezeptbuch mit SQLite und Hashing-Sicherheitsfunktionen
+          zu erstellen. Wir haben das Projekt seitdem zu einem modernen, reaktiven Frontend (Vite/React), einem
+          entkoppelten JSON API Backend und einer produktiven PostgreSQL/MongoDB-Anbindung umgebaut — inklusive
+          eigenständigem Deployment auf NAS (David) und AWS (Stefan).
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '30px' }}>
@@ -39,7 +38,7 @@ export default function UeberUns() {
             <div style={{ color: '#e94057' }}><Sparkles size={20} /></div>
             <div>
               <h4 style={{ fontSize: '0.95rem', marginBottom: '4px' }}>Moderner Stack</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Vite, React, Flask, SQLite und Glassmorphism.</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Vite, React, Flask, PostgreSQL, MongoDB und Glassmorphism.</p>
             </div>
           </div>
         </div>
