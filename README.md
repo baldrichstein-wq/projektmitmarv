@@ -1,127 +1,177 @@
+# Rezeptbuch & Brauportal
 
-# projektmitmarv
+Fullstack-Webanwendung für Koch- und Weinrezepte mit Portionsrechner, Volltextsuche und
+rollenbasierter Benutzerverwaltung. Entstanden als Abschlussprojekt (Modul 3, Mini-Agile-
+Simulation mit einwöchigen Sprints).
 
-Schulprojekt1 Rezeptbuch
+**Live:** [rezepte-kuechenchaos.duckdns.org](https://rezepte-kuechenchaos.duckdns.org)
 
+## Team
 
-Team
+David Ludwig-Erbs (NAS-Deployment) · Stefan Kallinich (AWS-Deployment)
 
-David (NAS-Deployment), Stefan (AWS-Deployment)
+## Features
 
+- Speisen- und Weinrezepte mit Zutaten, Beschreibung und Zubereitung anlegen, bearbeiten, löschen
+- Portionsrechner: Zutatenmengen live auf eine Zielportionszahl skalieren
+- Volltextsuche über Rezepte und Weine gleichzeitig
+- Rollenkonzept: `gast` (nur lesen), `benutzer` (eigene Rezepte verwalten), `admin` (alles,
+  inkl. Benutzerverwaltung)
+- Ownership-Schutz: `benutzer` kann nur eigene Einträge löschen, nicht die anderer
+- CSRF-Schutz, gehärtete Sessions, Passwort-Mindestanforderungen
+- Optionale Zwei-Faktor-Authentifizierung (TOTP) über QR-Code-Setup
 
-07.05. Fehlerbehebung und Fehlersuche und wieder auf tauchen von Fehlern David Marvin Marina Stefan  (wir sind Frustriert Mac ist Scheiße)
-20.05.2026 02:06 Uhr Bugfixing David mit Suporter Felix (4 Stunden Fehlersuche)
+## Tech-Stack
 
-06.08.2026 Stefan - Aufraeumen der Altlasten und Absicherung fuer Deployment auf AWS und NAS:
+| Bereich | Technologie |
+|---|---|
+| Frontend | React 18, Vite, Fetch API |
+| Backend | Flask 3, Gunicorn (WSGI, mehrere Worker) |
+| Datenbanken | PostgreSQL 15 (Benutzer), MongoDB 6 (Rezepte & Weine) |
+| Sicherheit | Werkzeug (Passwort-Hashing), Flask-Limiter (Rate-Limiting), pyotp + segno (TOTP-2FA) |
+| Infrastruktur | Docker, Docker Compose, Caddy 2 (Reverse-Proxy, automatisches HTTPS) |
 
-Entfernte Altlasten (altes, server-gerendertes Flask-Projekt, ersetzt durch REST-API main.py + frontend/-SPA):
-- main (1).py, main inet.py, test  (alte main.py-Versionen mit render_template)
-- rechner.py  (Skalierungs-Logik ist bereits identisch in main.py enthalten)
-- templates/ und static/  (HTML/CSS/JS der alten Server-gerenderten Oberflaeche, main.py nutzt kein render_template mehr)
-- benutzer.db, essen.db, essen.db-shm, essen.db-wal, wines.db  (alte SQLite-Datenbanken; Projekt nutzt jetzt ausschliesslich PostgreSQL fuer Benutzer und MongoDB fuer Essen/Wein)
-- Procfile, runtime.txt  (Heroku-spezifische Dateien, nicht mehr relevant da Deployment ueber Docker auf AWS/NAS erfolgt)
-- .DS_Store aus Git-Tracking entfernt (macOS-Systemdatei, gehoert nicht ins Repo)
-
-Sicherheits-/Deployment-Fixes:
-- main.py: Secret Key kommt jetzt aus der Umgebungsvariable SECRET_KEY (App startet nicht mehr mit hartkodiertem "supersecretkey123"; in Produktion Pflicht, sonst Fehler beim Start)
-- main.py: Flask-Debug-Modus kommt aus FLASK_DEBUG (Default: aus) statt fest debug=True (Debug-Modus in Produktion ist ein Remote-Code-Execution-Risiko)
-- main.py: CORS-Origins kommen aus CORS_ORIGINS (kommagetrennt) statt hartkodierter localhost-Ports, damit die echte Frontend-Domain auf AWS/NAS funktioniert
-- main.py: Session-Cookie-Flags gesetzt (SESSION_COOKIE_HTTPONLY, SESSION_COOKIE_SECURE per Env, SESSION_COOKIE_SAMESITE)
-- main.py: neuer Endpoint /api/health fuer Health-Checks (z.B. AWS Load Balancer, NAS Container-Monitoring)
-- Dockerfile: Start jetzt ueber Gunicorn statt Flask-Dev-Server, Container laeuft als non-root User, COPY *.db entfernt (keine SQLite-Dateien mehr noetig)
-- docker-compose.yml: Volume-Mount "backend_data:/app" entfernt (ueberlagerte bisher den kopierten Anwendungscode im Container mit einem leeren Volume); Ports von Postgres und MongoDB werden nicht mehr auf den Host gemappt (nur noch intern im Docker-Netzwerk erreichbar); alle Zugangsdaten (Postgres, MongoDB, Secret Key, CORS) kommen jetzt aus Umgebungsvariablen/.env statt hartkodiert im Compose-File zu stehen; veraltetes "version:"-Attribut entfernt
-- .env.example neu angelegt als Vorlage fuer die echten, geheimen Werte (.env selbst wird nicht committed, siehe .gitignore)
-- requirements.txt: Versionen fest gepinnt (vorher teils mit >=) fuer reproduzierbare Builds
-- .gitignore: *.db und .env/.env.* ergaenzt, damit Datenbank-Dumps und Secrets nicht mehr versehentlich eingecheckt werden
-
-Offene Punkte fuer spaeter (nicht in diesem Schritt umgesetzt): Connection-Pooling fuer PostgreSQL, atomische ID-Vergabe in MongoDB (wine.py/essen.py), Rate-Limiting fuer den Login, Ownership-Pruefung beim Loeschen von Rezepten.
-
-Lokaler Testlauf (docker compose) am selben Tag:
-- Stack lokal per "docker compose up --build" gestartet, um die Aenderungen im Browser zu pruefen
-- Zwei alte, lokale Docker-Volumes (pg_data, mongo_data) enthielten noch Passwoerter aus fruehreren Testlaeufen mit den alten, hartkodierten Zugangsdaten -> Authentifizierung schlug fehl. Volumes geloescht (nur lokale Testdaten, keine echten Nutzerdaten) und Stack neu gestartet, danach liefen alle vier Container (backend, frontend, postgres, mongodb) fehlerfrei
-- Health-Check (/api/health), Login (/api/anmeldung) und Frontend (Port 8082) erfolgreich getestet
-- 20 Beispiel-Essensrezepte und 10 Beispiel-Weinrezepte ueber die bestehende REST-API (/api/essen, /api/wein) angelegt, damit die Anwendung mit realistischen Daten ausprobiert werden kann
-- Hinweis: Rezepte liegen in den Docker-Volumes pg_data/mongo_data und bleiben bei "docker compose stop/down" (ohne -v) sowie beim Schliessen von Docker Desktop erhalten; nur "docker compose down -v" bzw. ein manuelles Loeschen der Volumes entfernt sie
-
-Ausfuehrliches Schritt-fuer-Schritt-Protokoll dieser gesamten Session: docs/protokoll-2026-08-06-deployment-sicherheit.md
-
-07.08.2026 Stefan - Offene Punkte aus der Analyse vom 06.08. behoben (bis auf die tote
-RECHTE_PRO_ROLE-Tabelle in benutzer.py und fehlende Eingabevalidierung bei liter/brewing_time/
-alcohol_content in main.py -- bewusst zurueckgestellt) sowie AWS-Vorbereitung:
-
-- Caddyfile (neu) + docker-compose.yml: neuer proxy-Service (Caddy) uebernimmt Port 80/443 und
-  automatisches HTTPS via Let's Encrypt (Domain ueber Env-Variable DOMAIN, Fallback "localhost"
-  mit selbstsigniertem Zertifikat fuer lokale Tests). backend und frontend haben keine direkten
-  Host-Port-Mappings mehr, sind nur noch ueber den Proxy erreichbar.
-- benutzer.py: PostgreSQL-Verbindungs-Pool (psycopg2.pool.SimpleConnectionPool) statt einer neuen
-  Verbindung pro Request/Funktionsaufruf.
-- wine.py, essen.py: atomare ID-Vergabe ueber eine MongoDB-"counters"-Collection
-  (find_one_and_update mit $inc) statt "hoechste ID + 1" (war eine Race Condition bei
-  gleichzeitigen Schreibzugriffen).
-- main.py: Rate-Limiting auf /api/anmeldung (10 Versuche/Minute pro IP, ueber flask-limiter)
-  gegen Brute-Force-Logins.
-- wine.py, essen.py, main.py: Ownership-Pruefung beim Loeschen -- neues Feld created_by
-  (E-Mail des Erstellers) wird beim Anlegen von Wein/Essen gespeichert; beim Loeschen darf
-  admin weiterhin alles loeschen, benutzer aber nur noch eigene Eintraege (Eintraege ohne
-  erfassten Ersteller, z.B. Altdaten, sind dann nur noch fuer admin loeschbar).
-- Dockerfile, docker-compose.yml: Gunicorn-Worker-Anzahl ueber WEB_CONCURRENCY (.env)
-  konfigurierbar statt fest auf 4 -- Default jetzt 2, passend fuer kleine AWS-Instanzen
-  (z.B. t3.micro mit 1 GiB RAM).
-- requirements.txt: flask-limiter ergaenzt. .env.example: DOMAIN und WEB_CONCURRENCY ergaenzt.
-- Neue, bewusst nicht versionierte Datei docs/aws-setup-eu-central-1.md (in .gitignore) mit
-  sehr detaillierter Schritt-fuer-Schritt-Anleitung fuer die AWS-Sandbox (eu-central-1,
-  15 EUR/Monat-Limit, gelegentlicher statt Dauerbetrieb).
-
-Bewusst nicht umgesetzt: Bereinigung der Git-Historie von den alten .db-Dateien (waere ein
-destruktiver Schritt mit Force-Push, auf Wunsch zurueckgestellt).
+> Anmerkung zur Modulvorgabe: Das Projekt nutzt **Flask statt FastAPI** — bewusste Entscheidung
+> im Team, gleiches REST-Architekturprinzip, aber im Rahmen des Moduls vertrauter. React Router
 
 
+## Architektur
 
--main.py Einbindung der wine.py, benutzer.py und essen.py mit Flask um die für die HTML zu gewährleisten David Woche 1 und 2
+```
+Browser (React/Vite SPA)
+   │  Fetch API, JSON über HTTPS
+   ▼
+Caddy (Reverse-Proxy, TLS-Terminierung, Let's Encrypt)
+   │
+   ├──► Frontend-Container (nginx, statischer React-Build)
+   │
+   └──► Backend-Container (Flask + Gunicorn)
+            │
+            ├──► PostgreSQL   (Benutzer / Auth)
+            └──► MongoDB      (Rezepte & Weine)
+```
 
--Benutzer anlegen und verwalten       Marina Woche 1
+Alle fünf Services (frontend, backend, postgres, mongodb, proxy) laufen über Docker Compose in
+einem gemeinsamen Netzwerk; `pg_data`, `mongo_data` und `caddy_data` sind benannte Volumes für
+persistente Daten über Container-Neustarts hinweg.
 
--Rechtevergabe                        Marvin Marina woche 1
+## API-Übersicht
 
--Essensrezept einfügen,ändern,löschen  Stefan David woche 1
+Basis-Pfad: `/api`. `GET` ist für alle Rollen offen (auch `gast`), veränderende Requests
+(`POST`/`PUT`/`DELETE`) sind angemeldeten Nutzern vorbehalten und benötigen zusätzlich einen
+gültigen `X-CSRF-Token`-Header (siehe `/api/csrf-token`).
 
--Weinrezepte einfügen,ändern,löschen   Marvin verbessern woche 1
+| Endpoint | Methode | Zweck |
+|---|---|---|
+| `/health` | GET | Health-Check für Monitoring/Load Balancer |
+| `/me` | GET | Aktuelle Session (Login-Status, Rolle, CSRF-Token) |
+| `/csrf-token` | GET | CSRF-Token für die aktuelle Session ausstellen |
+| `/anmeldung` | POST | Login (Schritt 1: Passwort) |
+| `/anmeldung/totp` | POST | Login (Schritt 2: TOTP-Code, nur falls 2FA aktiv) |
+| `/abmeldung` | POST | Logout |
+| `/registrierung` | POST | Neues Benutzerkonto anlegen |
+| `/2fa/status` | GET | Ist 2FA für den eingeloggten Nutzer aktiv? |
+| `/2fa/setup` | POST | Neues TOTP-Secret + QR-Code erzeugen |
+| `/2fa/aktivieren` | POST | 2FA mit Bestätigungscode scharf schalten |
+| `/2fa/deaktivieren` | POST | 2FA deaktivieren (Passwort-Bestätigung) |
+| `/benutzer` | GET, POST | Benutzerliste / neuen Benutzer anlegen (admin) |
+| `/benutzer/loeschen/<id>` | DELETE | Benutzer löschen (admin) |
+| `/benutzer/rolle_aendern/<id>` | POST | Rolle ändern (admin) |
+| `/benutzer/2fa_zuruecksetzen/<id>` | POST | 2FA eines Benutzers zurücksetzen (admin) |
+| `/essen` | GET, POST | Rezeptliste / neues Rezept |
+| `/essen/<id>` | GET, PUT | Einzelnes Rezept ansehen / bearbeiten |
+| `/essen/loeschen/<id>` | DELETE | Rezept löschen (Owner oder admin) |
+| `/essen/skalieren` | POST | Zutatenmengen auf Zielportionen umrechnen |
+| `/wein` | GET, POST | Weinliste / neuen Wein anlegen |
+| `/wein/<id>` | GET, PUT | Einzelnen Wein ansehen / bearbeiten |
+| `/wein/loeschen/<id>` | DELETE | Wein löschen (Owner oder admin) |
+| `/suche` | GET | Volltextsuche über Rezepte und Weine (`?q=`) |
 
--Weine für Essen vorschlagen           Marivn woche 2
+## Projektstruktur
 
--Rezepte berechnen für x Personen und X Liter  Berechnung woche 2
+```
+projektmitmarv/
+├── main.py              Flask-App, REST-Routen, CSRF-Schutz
+├── benutzer.py           Benutzerverwaltung, Auth, TOTP-2FA (PostgreSQL)
+├── essen.py               Speiserezepte (MongoDB)
+├── wine.py                Weinrezepte (MongoDB)
+├── requirements.txt        Python-Abhängigkeiten
+├── Dockerfile               Backend-Image (Gunicorn)
+├── docker-compose.yml        5-Service-Orchestrierung
+├── Caddyfile                  Reverse-Proxy-Konfiguration
+├── .env.example                 Vorlage für Umgebungsvariablen/Secrets
+└── frontend/
+    ├── src/
+    │   ├── components/           Essen, Wein, Auth, Admin, Sicherheit, Suche, ...
+    │   └── utils/api.js            CSRF-fähiger fetch()-Wrapper
+    ├── Dockerfile                 Frontend-Image (nginx)
+    └── nginx.conf
+```
 
--Datenbanken für Rezepte mit sqlite3 Stefan Marvin Woche 1
+## Lokale Entwicklung
 
--Datenbank für Benutzer David Marina Woche 1
+Voraussetzung: Docker + Docker Compose.
 
-- Html als GUI Marvin Woche 2
+```bash
+cp .env.example .env      # Secrets/Zufallswerte eintragen
+docker compose up -d --build
+```
 
-- Kommentar Sektion für Rezepte und bewertungsdurchschnitt anzeige sowie bewertungen  Woche 2
+Frontend danach unter `http://localhost` (über den Caddy-Proxy), Backend-API unter `/api/*`.
+Für reine Frontend-Entwicklung ohne Docker: `cd frontend && npm install && npm run dev`
+(erwartet ein separat laufendes Backend auf Port 5005).
 
-- Suchfunktion für den zweck der suche bestimmter rezepte Woche 2
+## Sicherheit
 
-- funktion für das erstellen von rezepten anderer nutzer global sichtbar Woche 1 und 2
+- Passwörter werden mit `werkzeug.security` (PBKDF2) gehasht, nie im Klartext gespeichert
+- Server-Session per signiertem, `HttpOnly`/`Secure`-Cookie statt Token im LocalStorage
+- CSRF-Schutz per Double-Submit-Token auf allen veränderten Requests, inklusive Login selbst
+- Session wird bei Login/Logout komplett neu aufgebaut (Schutz gegen Session Fixation)
+- Passwort-Mindestanforderungen (8+ Zeichen, Groß-/Kleinbuchstabe, Ziffer) bei Registrierung
+  und Admin-Benutzeranlage
+- Optionale TOTP-Zwei-Faktor-Authentifizierung; kein Backup-Codes-Flow (keine eigene
+  E-Mail-Domain), stattdessen Admin-Reset bei Geräteverlust
+- Rate-Limiting auf den Login (10 Versuche/Minute/IP) gegen Brute-Force
+- Ownership-Checks: `benutzer` kann nur eigene Rezepte/Weine löschen, `admin` alles
 
-Nutzung von Flask statt Fastapi
+## Entwicklungsverlauf
 
-IDEEN
+**Abschlusprojekt Modul 2 (29.04.–20.05.):** Ursprüngliches Team (Marvin, Marina, Stefan, David) baute die
+erste Version als serverseitig gerendertes Flask-Projekt (Jinja-Templates, SQLite) auf —
+Benutzerverwaltung, Rechtevergabe, Speise- und Weinrezepte samt Portionsrechner, Kommentar-
+/Bewertungssystem und Suchfunktion. Mehrere Debugging-Sessions rund um Session-Handling,
+Datei-Uploads und Merge-Konflikte zwischen den Branches.
 
-Suchfunktion:
+**03.–07.08. (David und Stefan):** Kompletter Umbau auf REST-API (Flask) + entkoppeltes React/Vite-SPA-
+Frontend. Altlasten (alte Jinja-Templates, SQLite-Dateien, Heroku-Reste) entfernt, Backend auf
+PostgreSQL (Benutzer) und MongoDB (Rezepte/Weine) umgestellt. Sicherheits-Grundlagen: Secret Key
+und CORS-Origins aus Umgebungsvariablen statt hartkodiert, Debug-Modus standardmäßig aus,
+Session-Cookie-Flags gesetzt. PostgreSQL-Connection-Pooling, atomare ID-Vergabe in MongoDB
+(Race-Condition-Fix), Rate-Limiting auf den Login, Ownership-Prüfung beim Löschen. Caddy als
+Reverse-Proxy mit automatischem HTTPS über Let's Encrypt eingerichtet, Vorbereitung des
+AWS-Deployments (eu-central-1, Budget-Limit 15 €/Monat).
 
--nach zutaten
+**11.08. (David und Stefan):** Impressum-Seite ergänzt (nicht-kommerzieller Hinweis statt vollem
+Impressum, da Schulprojekt ohne Gewinnerzielungsabsicht). Login-Härtung: CSRF-Schutz
+(Double-Submit-Token), Session-Regenerierung bei Login/Logout, serverseitige
+Passwort-Mindestanforderungen. Optionale TOTP-Zwei-Faktor-Authentifizierung inkl.
+QR-Code-Setup und Admin-Reset-Möglichkeit. Alle Änderungen lokal end-to-end getestet und auf
+AWS deployed.
 
--nach essen
+## Deployment
 
--nach kochart (in der heimischen küche, outdoor)
+- **AWS:** EC2 t3.micro, eu-central-1, Docker Compose, Caddy-Proxy mit DuckDNS-Domain
+  (`rezepte-kuechenchaos.duckdns.org`). Instanz wird zwischen Sessions gestoppt statt
+  terminiert, um Kosten zu sparen (Budget-Limit 15 €/Monat).
+- **NAS:** paralleles Deployment durch David (Details siehe Präsentation).
 
--nach zeit
--nach vor-haupt-nachspeiße
+## Bekannte Einschränkungen & Ausblick
 
-
-- Menü Zusammenstellung gimimg
-
-
-
--Glosar Woche 3
-
+- **React Router fehlt** — Navigation läuft aktuell über internen `activeTab`-State statt
+  echter URLs/Browser-Historie.
+- Rate-Limiter-Speicher ist In-Memory (pro Gunicorn-Worker getrennt) — für mehrere
+  Hosts/Instanzen bräuchte es einen geteilten Speicher (z. B. Redis).
+- Kein automatisierter Datenbank-Export/Backup (aktuell manuell per `mongodump`/`mongorestore`).
+- Keine CI/CD-Pipeline — Deployment läuft manuell per SSH + `docker compose up -d --build`.
+- Keine Backup-Codes für 2FA (siehe [Sicherheit](#sicherheit)) — sinnvoll nachrüstbar, sobald
+  eine eigene E-Mail-Domain existiert.
