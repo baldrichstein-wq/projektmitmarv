@@ -4,7 +4,7 @@ Fullstack-Webanwendung für Koch- und Weinrezepte mit Portionsrechner, Volltexts
 rollenbasierter Benutzerverwaltung. Entstanden als Abschlussprojekt (Modul 3, Mini-Agile-
 Simulation mit einwöchigen Sprints).
 
-**Live:** [rezepte-kuechenchaos.duckdns.org](https://rezepte-kuechenchaos.duckdns.org) [dasarchiv.uk].(https://dasarchiv.uk).
+**Live:** [rezepte-kuechenchaos.duckdns.org](https://rezepte-kuechenchaos.duckdns.org) (https://dasarchiv.uk).
 
 ## Team
 
